@@ -380,26 +380,6 @@ Rectangle {
         anchors.rightMargin: 0
         spacing: 2
 
-        // ── Utility row: keys that aren't A–Z ──
-        RowLayout {
-            Layout.fillWidth: true
-            spacing: 4
-            NAlphaButton { Layout.fillWidth: true; text: "EE";  keymap_id: 30 }
-            NAlphaButton { Layout.fillWidth: true; text: "π▸";  keymap_id: 19 }
-            NAlphaButton { Layout.fillWidth: true; text: "?!▸"; keymap_id: 8  }
-            NAlphaButton { Layout.fillWidth: true; text: "";    keymap_id: 66
-                Image {
-                    source: "qrc:/keyimages/resources/keyimages/flag.png"
-                    anchors.fill: parent
-                    fillMode: Image.PreserveAspectFit
-                    smooth: true
-                    mipmap: true
-                }
-            }
-            NAlphaButton { Layout.fillWidth: true; text: ",";   keymap_id: 87 }
-            NAlphaButton { Layout.fillWidth: true; text: "\u23CE"; keymap_id: 1  }
-        }
-
         // ── QWERTY row 1: Q W E R T Y U I O P (10) ──
         GridLayout {
             Layout.fillWidth: true
@@ -436,11 +416,10 @@ Rectangle {
             Item { Layout.preferredWidth: 8; Layout.fillWidth: false }
         }
 
-        // ── QWERTY row 3: Z X C V B N M (7, 1.5-key indent) ──
+        // ── QWERTY row 3: Z X C V B N M + ↵  (8 keys, ↵ on right of M) ──
         RowLayout {
             Layout.fillWidth: true
             spacing: 2
-            Item { Layout.preferredWidth: 24; Layout.fillWidth: false }
             NAlphaButton { Layout.fillWidth: true; text: "Z"; keymap_id: 5  }
             NAlphaButton { Layout.fillWidth: true; text: "X"; keymap_id: 11 }
             NAlphaButton { Layout.fillWidth: true; text: "C"; keymap_id: 48 }
@@ -448,16 +427,27 @@ Rectangle {
             NAlphaButton { Layout.fillWidth: true; text: "B"; keymap_id: 49 }
             NAlphaButton { Layout.fillWidth: true; text: "N"; keymap_id: 27 }
             NAlphaButton { Layout.fillWidth: true; text: "M"; keymap_id: 28 }
-            Item { Layout.preferredWidth: 24; Layout.fillWidth: false }
+            NAlphaButton { Layout.fillWidth: true; text: "\u23CE"; keymap_id: 1 }
         }
 
-        // ── Space row ──
+        // ── Bottom row: EE π ?! , flag space ──
         RowLayout {
             Layout.fillWidth: true
             spacing: 2
-            Item { Layout.preferredWidth: 50; Layout.fillWidth: false }
-            NAlphaButton { Layout.fillWidth: true; text: "space"; keymap_id: 4 }
-            Item { Layout.preferredWidth: 50; Layout.fillWidth: false }
+            NAlphaButton { Layout.fillWidth: true; text: "EE";  keymap_id: 30 }
+            NAlphaButton { Layout.fillWidth: true; text: "π▸";  keymap_id: 19 }
+            NAlphaButton { Layout.fillWidth: true; text: "?!▸"; keymap_id: 8  }
+            NAlphaButton { Layout.fillWidth: true; text: ",";   keymap_id: 87 }
+            NAlphaButton { Layout.fillWidth: true; text: "";    keymap_id: 66
+                Image {
+                    source: "qrc:/keyimages/resources/keyimages/flag.png"
+                    anchors.fill: parent
+                    fillMode: Image.PreserveAspectFit
+                    smooth: true
+                    mipmap: true
+                }
+            }
+            NAlphaButton { Layout.fillWidth: true; Layout.preferredWidth: 80; text: "space"; keymap_id: 4 }
         }
     }
 
