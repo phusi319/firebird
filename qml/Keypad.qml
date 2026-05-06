@@ -6,7 +6,7 @@ import QtQuick.Layouts 1.0
 Rectangle {
     id: rectangle1
     width: 265
-    height: 360
+    height: 340
     color: "#444"
 
 
@@ -373,7 +373,7 @@ Rectangle {
         anchors.top: gridLayout1.bottom
         anchors.topMargin: 11
         anchors.bottom: parent.bottom
-        anchors.bottomMargin: 22
+        anchors.bottomMargin: 4
         anchors.left: nDualButton4.left
         anchors.leftMargin: 0
         anchors.right: nButton8.right
