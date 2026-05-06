@@ -397,7 +397,7 @@ Rectangle {
                 }
             }
             NAlphaButton { Layout.fillWidth: true; text: ",";   keymap_id: 87 }
-            NAlphaButton { Layout.fillWidth: true; text: "ent"; keymap_id: 1  }
+            NAlphaButton { Layout.fillWidth: true; text: "\u23CE"; keymap_id: 1  }
         }
 
         // ── QWERTY row 1: Q W E R T Y U I O P (10) ──
