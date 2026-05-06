@@ -133,6 +133,7 @@ ApplicationWindow {
         snapMode: ListView.SnapOneItem
         boundsBehavior: ListView.StopAtBounds
         pixelAligned: true
+        interactive: false
 
         // Keep the pages alive
         cacheBuffer: width * count

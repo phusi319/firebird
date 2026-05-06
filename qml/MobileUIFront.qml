@@ -38,6 +38,34 @@ GridLayout {
             repeat: true
             onTriggered: screen.update()
         }
+
+        MouseArea {
+            id: swipeArea
+            anchors.fill: parent
+            propagateComposedEvents: true
+
+            property real startX: 0
+            property real startY: 0
+            property bool tracking: false
+
+            onPressed: {
+                startX = mouse.x;
+                startY = mouse.y;
+                tracking = true;
+                mouse.accepted = false;
+            }
+            onReleased: {
+                if (!tracking) return;
+                tracking = false;
+                var dx = mouse.x - startX;
+                var dy = mouse.y - startY;
+                // horizontal swipe right, dominant over vertical, threshold = 8% of screen width (DPI-independent)
+                if (dx > mobileui.width * 0.08 && Math.abs(dx) > Math.abs(dy) * 1.5) {
+                    listView.openDrawer();
+                }
+            }
+            onCanceled: tracking = false
+        }
     }
 
     Flickable {
