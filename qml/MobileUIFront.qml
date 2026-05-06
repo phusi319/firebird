@@ -17,15 +17,18 @@ GridLayout {
 
     VerticalSwipeBar {
         id: swipeBar
-        Layout.preferredHeight: screen.implicitHeight
+        visible: false
+        Layout.preferredHeight: 0
+        Layout.preferredWidth: 0
 
         onClicked: listView.openDrawer()
     }
 
     EmuScreen {
         id: screen
-        implicitHeight: (mobileui.width - swipeBar.implicitWidth) / 320 * 240
+        implicitHeight: mobileui.width / 320 * 240
         Layout.fillWidth: true
+        Layout.columnSpan: 2
 
         focus: true
 
