@@ -70,6 +70,8 @@ Item {
 
     VerticalSwipeBar {
         id: swipeBar
+        text: qsTr("◀ Back")
+        implicitWidth: 36
 
         anchors {
             right: parent.right
@@ -78,7 +80,7 @@ Item {
         }
 
         onClicked: {
-            listView.openDrawer();
+            listView.closeDrawer();
         }
     }
 }
