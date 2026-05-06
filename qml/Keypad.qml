@@ -378,7 +378,7 @@ Rectangle {
         anchors.leftMargin: 0
         anchors.right: nButton8.right
         anchors.rightMargin: 0
-        spacing: 8
+        spacing: 4
 
         // ── QWERTY row 1: Q W E R T Y U I O P (10) ──
         GridLayout {
