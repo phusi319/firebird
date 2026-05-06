@@ -34,6 +34,7 @@
         <file>qml/Touchpad.qml</file>
         <file>qml/NDualButton.qml</file>
         <file>qml/MobileUI.qml</file>
+        <file>qml/KeypadPreview.qml</file>
         <file>qml/SidebarButton.qml</file>
         <file>qml/ConfigPagesModel.qml</file>
         <file>qml/Firebird/UIComponents/PageDelegate.qml</file>

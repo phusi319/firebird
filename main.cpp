@@ -8,6 +8,7 @@
 
 #include <QWindow>
 #include <QQmlApplicationEngine>
+#include <memory>
 
 #include "emuthread.h"
 #include "qtframebuffer.h"
@@ -122,8 +123,21 @@ int main(int argc, char **argv)
     qmlRegisterType<KitModel>("Firebird.Emu", 1, 0, "KitModel");
 
     #ifndef MOBILE_UI
-        MainWindow mw;
-        main_window = &mw;
+        // --mobile-preview: load MobileUI.qml on desktop for QWERTY keypad testing.
+        bool mobilePreview = false;
+        for (int i = 1; i < argc; ++i)
+            if (QString::fromLocal8Bit(argv[i]) == QStringLiteral("--mobile-preview"))
+                mobilePreview = true;
+
+        QQmlApplicationEngine engine;
+        std::unique_ptr<MainWindow> mw;
+        if (mobilePreview) {
+            engine.addImportPath(QStringLiteral("qrc:/qml/qml/"));
+            engine.load(QUrl(QStringLiteral("qrc:/qml/qml/KeypadPreview.qml")));
+        } else {
+            mw.reset(new MainWindow);
+            main_window = mw.get();
+        }
     #else
         QQmlApplicationEngine engine;
         engine.addImportPath(QStringLiteral("qrc:/qml/qml/"));
