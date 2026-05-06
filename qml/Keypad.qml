@@ -378,14 +378,14 @@ Rectangle {
         anchors.leftMargin: 0
         anchors.right: nButton8.right
         anchors.rightMargin: 0
-        spacing: 2
+        spacing: 8
 
         // ── QWERTY row 1: Q W E R T Y U I O P (10) ──
         GridLayout {
             Layout.fillWidth: true
             rows: 1
             columns: 10
-            columnSpacing: 2
+            columnSpacing: 6
             rowSpacing: 0
             NAlphaButton { Layout.fillWidth: true; text: "Q"; keymap_id: 23 }
             NAlphaButton { Layout.fillWidth: true; text: "W"; keymap_id: 12 }
@@ -402,9 +402,9 @@ Rectangle {
         // ── QWERTY row 2: A S D F G H J K L (9, half-key indent) ──
         RowLayout {
             Layout.fillWidth: true
-            spacing: 2
+            spacing: 6
             Item { Layout.preferredWidth: 8; Layout.fillWidth: false }
-            NAlphaButton { Layout.fillWidth: true; text: "A"; keymap_id: 50 }
+            NAlphaButton { id: btnA; Layout.fillWidth: true; text: "A"; keymap_id: 50 }
             NAlphaButton { Layout.fillWidth: true; text: "S"; keymap_id: 17 }
             NAlphaButton { Layout.fillWidth: true; text: "D"; keymap_id: 46 }
             NAlphaButton { Layout.fillWidth: true; text: "F"; keymap_id: 44 }
@@ -416,27 +416,27 @@ Rectangle {
             Item { Layout.preferredWidth: 8; Layout.fillWidth: false }
         }
 
-        // ── QWERTY row 3: , Z X C V B N M ↵  (9 keys) ──
+        // ── QWERTY row 3: , Z X C V B N M ↵  (Z..M same width as A..L; , and ↵ absorb indent) ──
         RowLayout {
             Layout.fillWidth: true
-            spacing: 2
-            NAlphaButton { Layout.fillWidth: true; text: ","; keymap_id: 87 }
-            NAlphaButton { Layout.fillWidth: true; text: "Z"; keymap_id: 5  }
-            NAlphaButton { Layout.fillWidth: true; text: "X"; keymap_id: 11 }
-            NAlphaButton { Layout.fillWidth: true; text: "C"; keymap_id: 48 }
-            NAlphaButton { Layout.fillWidth: true; text: "V"; keymap_id: 13 }
-            NAlphaButton { Layout.fillWidth: true; text: "B"; keymap_id: 49 }
-            NAlphaButton { Layout.fillWidth: true; text: "N"; keymap_id: 27 }
-            NAlphaButton { Layout.fillWidth: true; text: "M"; keymap_id: 28 }
+            spacing: 6
+            NAlphaButton { Layout.fillWidth: true; text: "π▶"; keymap_id: 19 }
+            NAlphaButton { Layout.fillWidth: false; Layout.preferredWidth: btnA.width; text: "Z"; keymap_id: 5  }
+            NAlphaButton { Layout.fillWidth: false; Layout.preferredWidth: btnA.width; text: "X"; keymap_id: 11 }
+            NAlphaButton { Layout.fillWidth: false; Layout.preferredWidth: btnA.width; text: "C"; keymap_id: 48 }
+            NAlphaButton { Layout.fillWidth: false; Layout.preferredWidth: btnA.width; text: "V"; keymap_id: 13 }
+            NAlphaButton { Layout.fillWidth: false; Layout.preferredWidth: btnA.width; text: "B"; keymap_id: 49 }
+            NAlphaButton { Layout.fillWidth: false; Layout.preferredWidth: btnA.width; text: "N"; keymap_id: 27 }
+            NAlphaButton { Layout.fillWidth: false; Layout.preferredWidth: btnA.width; text: "M"; keymap_id: 28 }
             NAlphaButton { Layout.fillWidth: true; text: "\u23CE"; keymap_id: 1 }
         }
 
         // ── Bottom row: EE π▸ space ?!▸ flag ──
         RowLayout {
             Layout.fillWidth: true
-            spacing: 2
+            spacing: 6
             NAlphaButton { Layout.fillWidth: true; text: "EE";  keymap_id: 30 }
-            NAlphaButton { Layout.fillWidth: true; text: "π▶";  keymap_id: 19 }
+            NAlphaButton { Layout.fillWidth: true; text: ",";  keymap_id: 87 }
             NAlphaButton { Layout.fillWidth: true; Layout.preferredWidth: 80; text: "space"; keymap_id: 4 }
             NAlphaButton { Layout.fillWidth: true; text: "?!▶"; keymap_id: 8  }
             NAlphaButton { Layout.fillWidth: true; text: "";    keymap_id: 66
