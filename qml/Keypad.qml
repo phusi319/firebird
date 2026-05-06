@@ -455,9 +455,8 @@ Rectangle {
             NAlphaButton { Layout.fillWidth: false; Layout.preferredWidth: btnA.width; text: "M"; keymap_id: 28 }
             NAlphaButton { Layout.fillWidth: true; text: ""; keymap_id: 1
                 Image {
-                    anchors.centerIn: parent
-                    height: parent.height * 0.5
-                    width: height * 1.2
+                    anchors.fill: parent
+                    anchors.margins: 2
                     source: "qrc:/keyimages/resources/keyimages/enter.png"
                     fillMode: Image.PreserveAspectFit
                     smooth: true
