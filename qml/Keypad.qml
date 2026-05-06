@@ -420,7 +420,7 @@ Rectangle {
         RowLayout {
             Layout.fillWidth: true
             spacing: 6
-            NAlphaButton { Layout.fillWidth: true; text: "π▶"; keymap_id: 19 }
+            NAlphaButton { Layout.fillWidth: true; text: "π▶\ufe0e"; keymap_id: 19 }
             NAlphaButton { Layout.fillWidth: false; Layout.preferredWidth: btnA.width; text: "Z"; keymap_id: 5  }
             NAlphaButton { Layout.fillWidth: false; Layout.preferredWidth: btnA.width; text: "X"; keymap_id: 11 }
             NAlphaButton { Layout.fillWidth: false; Layout.preferredWidth: btnA.width; text: "C"; keymap_id: 48 }
@@ -438,7 +438,7 @@ Rectangle {
             NAlphaButton { Layout.fillWidth: true; text: "EE";  keymap_id: 30 }
             NAlphaButton { Layout.fillWidth: true; text: ",";  keymap_id: 87 }
             NAlphaButton { Layout.fillWidth: true; Layout.preferredWidth: 80; text: "space"; keymap_id: 4 }
-            NAlphaButton { Layout.fillWidth: true; text: "?!▶"; keymap_id: 8  }
+            NAlphaButton { Layout.fillWidth: true; text: "?!▶\ufe0e"; keymap_id: 8  }
             NAlphaButton { Layout.fillWidth: true; text: "";    keymap_id: 66
                 Image {
                     source: "qrc:/keyimages/resources/keyimages/flag.png"
