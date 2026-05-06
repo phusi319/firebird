@@ -436,10 +436,10 @@ Rectangle {
                         anchors.verticalCenter: parent.verticalCenter
                     }
                     Image {
-                        source: "qrc:/keyimages/resources/keyimages/arrow.png"
-                        height: btnPi.height * 0.45
-                        width: height
+                        width: btnPi.height * 0.32
+                        height: btnPi.height * 0.4
                         anchors.verticalCenter: parent.verticalCenter
+                        source: "qrc:/keyimages/resources/keyimages/arrow_right.png"
                         fillMode: Image.PreserveAspectFit
                         smooth: true
                         mipmap: true
@@ -479,10 +479,10 @@ Rectangle {
                         anchors.verticalCenter: parent.verticalCenter
                     }
                     Image {
-                        source: "qrc:/keyimages/resources/keyimages/arrow.png"
-                        height: btnQM.height * 0.45
-                        width: height
+                        width: btnQM.height * 0.32
+                        height: btnQM.height * 0.4
                         anchors.verticalCenter: parent.verticalCenter
+                        source: "qrc:/keyimages/resources/keyimages/arrow_right.png"
                         fillMode: Image.PreserveAspectFit
                         smooth: true
                         mipmap: true
