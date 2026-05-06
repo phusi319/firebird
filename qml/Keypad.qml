@@ -420,7 +420,38 @@ Rectangle {
         RowLayout {
             Layout.fillWidth: true
             spacing: 6
-            NAlphaButton { Layout.fillWidth: true; text: "π⏵"; keymap_id: 19 }
+            NAlphaButton {
+                id: btnPi
+                Layout.fillWidth: true
+                text: ""
+                keymap_id: 19
+                Row {
+                    anchors.centerIn: parent
+                    spacing: 2
+                    Text {
+                        text: "π"
+                        color: "#fff"
+                        font.bold: true
+                        font.pixelSize: btnPi.height * 0.55
+                        anchors.verticalCenter: parent.verticalCenter
+                    }
+                    Canvas {
+                        width: 6
+                        height: btnPi.height * 0.4
+                        anchors.verticalCenter: parent.verticalCenter
+                        onPaint: {
+                            var ctx = getContext("2d");
+                            ctx.fillStyle = "#fff";
+                            ctx.beginPath();
+                            ctx.moveTo(0, 0);
+                            ctx.lineTo(width, height/2);
+                            ctx.lineTo(0, height);
+                            ctx.closePath();
+                            ctx.fill();
+                        }
+                    }
+                }
+            }
             NAlphaButton { Layout.fillWidth: false; Layout.preferredWidth: btnA.width; text: "Z"; keymap_id: 5  }
             NAlphaButton { Layout.fillWidth: false; Layout.preferredWidth: btnA.width; text: "X"; keymap_id: 11 }
             NAlphaButton { Layout.fillWidth: false; Layout.preferredWidth: btnA.width; text: "C"; keymap_id: 48 }
@@ -438,7 +469,38 @@ Rectangle {
             NAlphaButton { Layout.fillWidth: true; text: "EE";  keymap_id: 30 }
             NAlphaButton { Layout.fillWidth: true; text: ",";  keymap_id: 87 }
             NAlphaButton { Layout.fillWidth: true; Layout.preferredWidth: 80; text: "space"; keymap_id: 4 }
-            NAlphaButton { Layout.fillWidth: true; text: "?!⏵"; keymap_id: 8  }
+            NAlphaButton {
+                id: btnQM
+                Layout.fillWidth: true
+                text: ""
+                keymap_id: 8
+                Row {
+                    anchors.centerIn: parent
+                    spacing: 2
+                    Text {
+                        text: "?!"
+                        color: "#fff"
+                        font.bold: true
+                        font.pixelSize: btnQM.height * 0.55
+                        anchors.verticalCenter: parent.verticalCenter
+                    }
+                    Canvas {
+                        width: 6
+                        height: btnQM.height * 0.4
+                        anchors.verticalCenter: parent.verticalCenter
+                        onPaint: {
+                            var ctx = getContext("2d");
+                            ctx.fillStyle = "#fff";
+                            ctx.beginPath();
+                            ctx.moveTo(0, 0);
+                            ctx.lineTo(width, height/2);
+                            ctx.lineTo(0, height);
+                            ctx.closePath();
+                            ctx.fill();
+                        }
+                    }
+                }
+            }
             NAlphaButton { Layout.fillWidth: true; text: "";    keymap_id: 66
                 Image {
                     source: "qrc:/keyimages/resources/keyimages/flag.png"
