@@ -416,10 +416,11 @@ Rectangle {
             Item { Layout.preferredWidth: 8; Layout.fillWidth: false }
         }
 
-        // ── QWERTY row 3: Z X C V B N M + ↵  (8 keys, ↵ on right of M) ──
+        // ── QWERTY row 3: , Z X C V B N M ↵  (9 keys) ──
         RowLayout {
             Layout.fillWidth: true
             spacing: 2
+            NAlphaButton { Layout.fillWidth: true; text: ","; keymap_id: 87 }
             NAlphaButton { Layout.fillWidth: true; text: "Z"; keymap_id: 5  }
             NAlphaButton { Layout.fillWidth: true; text: "X"; keymap_id: 11 }
             NAlphaButton { Layout.fillWidth: true; text: "C"; keymap_id: 48 }
@@ -430,14 +431,14 @@ Rectangle {
             NAlphaButton { Layout.fillWidth: true; text: "\u23CE"; keymap_id: 1 }
         }
 
-        // ── Bottom row: EE π ?! , flag space ──
+        // ── Bottom row: EE π▸ space ?!▸ flag ──
         RowLayout {
             Layout.fillWidth: true
             spacing: 2
             NAlphaButton { Layout.fillWidth: true; text: "EE";  keymap_id: 30 }
-            NAlphaButton { Layout.fillWidth: true; text: "π▸";  keymap_id: 19 }
-            NAlphaButton { Layout.fillWidth: true; text: "?!▸"; keymap_id: 8  }
-            NAlphaButton { Layout.fillWidth: true; text: ",";   keymap_id: 87 }
+            NAlphaButton { Layout.fillWidth: true; text: "π▶";  keymap_id: 19 }
+            NAlphaButton { Layout.fillWidth: true; Layout.preferredWidth: 80; text: "space"; keymap_id: 4 }
+            NAlphaButton { Layout.fillWidth: true; text: "?!▶"; keymap_id: 8  }
             NAlphaButton { Layout.fillWidth: true; text: "";    keymap_id: 66
                 Image {
                     source: "qrc:/keyimages/resources/keyimages/flag.png"
@@ -447,7 +448,6 @@ Rectangle {
                     mipmap: true
                 }
             }
-            NAlphaButton { Layout.fillWidth: true; Layout.preferredWidth: 80; text: "space"; keymap_id: 4 }
         }
     }
 
