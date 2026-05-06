@@ -4,3 +4,11 @@
 *.user.*
 *.bc
 *.qmlc
+
+# Local build artifacts (added 2026-05-06)
+build/
+aqtinstall.log
+*.dll
+*.a
+*.lib
+

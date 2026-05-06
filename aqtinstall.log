@@ -1,3 +1,0 @@
-2026-05-06 02:52:58,680 - aqt.main - INFO - installer 16172 aqtinstall(aqt) v3.3.0 on Python 3.14.3 [CPython MSC v.1944 64 bit (AMD64)]
-2026-05-06 02:52:59,225 - aqt.helper - DEBUG - helper 13684 Attempt to download checksum at https://download.qt.io/online/qtsdkrepository/windows_x86/desktop/qt5_5152/Updates.xml.sha256
-2026-05-06 02:53:01,431 - aqt.helper - DEBUG - helper 13684 Attempt to download checksum at https://download.qt.io/online/qtsdkrepository/windows_x86/desktop/qt5_5152_wasm/Updates.xml.sha256
