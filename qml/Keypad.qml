@@ -371,7 +371,7 @@ Rectangle {
     ColumnLayout {
         id: gridLayout2
         anchors.top: gridLayout1.bottom
-        anchors.topMargin: 11
+        anchors.topMargin: 5
         anchors.bottom: parent.bottom
         anchors.bottomMargin: 4
         anchors.left: nDualButton4.left
