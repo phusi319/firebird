@@ -25,8 +25,8 @@ Rectangle {
         }
 
         onReleased: {
-            if(Math.abs(orig.x - mouse.x) < 5
-               && Math.abs(orig.y - mouse.y) < 5)
+            if(Math.abs(orig.x - mouse.x) < 16
+               && Math.abs(orig.y - mouse.y) < 16)
             parent.clicked();
         }
     }
