@@ -71,7 +71,7 @@ Item {
     VerticalSwipeBar {
         id: swipeBar
         text: qsTr("◀ Back")
-        implicitWidth: 36
+        implicitWidth: 108
 
         anchors {
             right: parent.right
