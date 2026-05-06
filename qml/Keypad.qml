@@ -435,20 +435,14 @@ Rectangle {
                         font.pixelSize: btnPi.height * 0.55
                         anchors.verticalCenter: parent.verticalCenter
                     }
-                    Canvas {
-                        width: 6
-                        height: btnPi.height * 0.4
+                    Image {
+                        source: "qrc:/keyimages/resources/keyimages/arrow.png"
+                        height: btnPi.height * 0.45
+                        width: height
                         anchors.verticalCenter: parent.verticalCenter
-                        onPaint: {
-                            var ctx = getContext("2d");
-                            ctx.fillStyle = "#fff";
-                            ctx.beginPath();
-                            ctx.moveTo(0, 0);
-                            ctx.lineTo(width, height/2);
-                            ctx.lineTo(0, height);
-                            ctx.closePath();
-                            ctx.fill();
-                        }
+                        fillMode: Image.PreserveAspectFit
+                        smooth: true
+                        mipmap: true
                     }
                 }
             }
@@ -484,20 +478,14 @@ Rectangle {
                         font.pixelSize: btnQM.height * 0.55
                         anchors.verticalCenter: parent.verticalCenter
                     }
-                    Canvas {
-                        width: 6
-                        height: btnQM.height * 0.4
+                    Image {
+                        source: "qrc:/keyimages/resources/keyimages/arrow.png"
+                        height: btnQM.height * 0.45
+                        width: height
                         anchors.verticalCenter: parent.verticalCenter
-                        onPaint: {
-                            var ctx = getContext("2d");
-                            ctx.fillStyle = "#fff";
-                            ctx.beginPath();
-                            ctx.moveTo(0, 0);
-                            ctx.lineTo(width, height/2);
-                            ctx.lineTo(0, height);
-                            ctx.closePath();
-                            ctx.fill();
-                        }
+                        fillMode: Image.PreserveAspectFit
+                        smooth: true
+                        mipmap: true
                     }
                 }
             }
