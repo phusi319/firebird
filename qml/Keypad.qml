@@ -453,7 +453,7 @@ Rectangle {
             NAlphaButton { Layout.fillWidth: false; Layout.preferredWidth: btnA.width; text: "B"; keymap_id: 49 }
             NAlphaButton { Layout.fillWidth: false; Layout.preferredWidth: btnA.width; text: "N"; keymap_id: 27 }
             NAlphaButton { Layout.fillWidth: false; Layout.preferredWidth: btnA.width; text: "M"; keymap_id: 28 }
-            NAlphaButton { Layout.fillWidth: true; text: "\u23CE"; keymap_id: 1 }
+            NAlphaButton { Layout.fillWidth: true; text: "\u23CE"; keymap_id: 0 }
         }
 
         // ── Bottom row: EE π▸ space ?!▸ flag ──
