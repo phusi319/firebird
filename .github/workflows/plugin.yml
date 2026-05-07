@@ -1,0 +1,48 @@
+name: Build Ndless touchscreen plugin
+
+on:
+  push:
+    branches: [touchscreen-input, master]
+    paths:
+      - 'tools/touchscreen_plugin/**'
+      - '.github/workflows/plugin.yml'
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ubuntu-22.04
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install ARM toolchain + deps
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends \
+            gcc-arm-none-eabi binutils-arm-none-eabi \
+            libnewlib-arm-none-eabi libstdc++-arm-none-eabi-newlib \
+            build-essential cmake git zlib1g-dev libboost-program-options-dev
+
+      - name: Clone & build Ndless SDK
+        run: |
+          git clone --depth 1 https://github.com/ndless-nspire/Ndless.git $HOME/ndless
+          cd $HOME/ndless/ndless-sdk
+          # genzehn + make-prg + zehn-related host tools, plus the
+          # nspire-gcc/nspire-ld wrapper scripts.
+          make -C tools/genzehn
+          make -C tools/Ndless/src/loader/luna || true
+          make -j$(nproc) || (echo "Ndless SDK build failed; see log above" && exit 1)
+          echo "$HOME/ndless/ndless-sdk/bin" >> $GITHUB_PATH
+          echo "$HOME/ndless/ndless-sdk/toolchain/install/bin" >> $GITHUB_PATH
+
+      - name: Build plugin
+        run: |
+          cd tools/touchscreen_plugin
+          make
+          ls -la fb_touchscreen.tns
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: fb_touchscreen-tns
+          path: tools/touchscreen_plugin/fb_touchscreen.tns
+          if-no-files-found: error
