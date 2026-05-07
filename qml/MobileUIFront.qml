@@ -39,24 +39,93 @@ GridLayout {
             onTriggered: screen.update()
         }
 
+        // Touch handler over the emulated screen.
+        // Two responsibilities, mutually exclusive within a single press:
+        //   1. Detect a horizontal swipe-right -> open drawer (suppresses touchpad).
+        //   2. Otherwise, forward the touch as absolute touchpad input
+        //      (tap/hold/drag), feeding Emu.setTouchpadState the same way
+        //      qml/Touchpad.qml does for the virtual touchpad widget.
         MouseArea {
             id: swipeArea
             anchors.fill: parent
+            acceptedButtons: Qt.LeftButton
+            preventStealing: true
 
             property real startX: 0
             property real startY: 0
+            property bool swiped: false
+            property bool isDown: false
+
+            function submitState() {
+                // While a swipe is in progress, release the touchpad so the
+                // OS doesn't see a stray drag/click.
+                if (swiped)
+                    Emu.setTouchpadState(0, 0, false, false);
+                else
+                    Emu.setTouchpadState(mouseX / width, mouseY / height,
+                                        pressed || isDown, isDown);
+            }
+
+            // Press-and-hold (>= 200 ms) -> button-down (drag).
+            Timer {
+                id: clickOnHoldTimer
+                interval: 200
+                onTriggered: {
+                    swipeArea.isDown = true;
+                    swipeArea.submitState();
+                }
+            }
+            // Quick-tap completion: emit a brief down pulse on release.
+            Timer {
+                id: clickOnReleaseTimer
+                interval: 100
+                onTriggered: {
+                    swipeArea.isDown = false;
+                    swipeArea.submitState();
+                }
+            }
 
             onPressed: {
                 startX = mouse.x;
                 startY = mouse.y;
+                swiped = false;
+                isDown = false;
+                clickOnHoldTimer.restart();
+                submitState();
             }
-            onReleased: {
-                var dx = mouse.x - startX;
-                var dy = mouse.y - startY;
-                // horizontal swipe right, dominant over vertical, threshold = 8% of screen width (DPI-independent)
-                if (dx > mobileui.width * 0.08 && Math.abs(dx) > Math.abs(dy) * 1.5) {
-                    listView.openDrawer();
+
+            onMouseXChanged: {
+                if (!swiped) {
+                    var dx = mouseX - startX;
+                    var dy = mouseY - startY;
+                    // horizontal swipe right, dominant over vertical,
+                    // threshold = 8% of screen width (DPI-independent).
+                    if (dx > mobileui.width * 0.08
+                        && Math.abs(dx) > Math.abs(dy) * 1.5) {
+                        swiped = true;
+                        clickOnHoldTimer.stop();
+                    }
                 }
+                submitState();
+            }
+            onMouseYChanged: submitState()
+
+            onReleased: {
+                if (swiped) {
+                    Emu.setTouchpadState(0, 0, false, false);
+                    listView.openDrawer();
+                    return;
+                }
+                if (clickOnHoldTimer.running) {
+                    // Quick tap: never reached hold threshold.
+                    clickOnHoldTimer.stop();
+                    isDown = true;
+                    clickOnReleaseTimer.restart();
+                } else {
+                    // Long press: was already down; release now.
+                    isDown = false;
+                }
+                submitState();
             }
         }
     }
