@@ -217,6 +217,110 @@ GridLayout {
         color: keypad.color
     }
 
+    /* In-app debug log overlay. Tap the small 'LOG' badge bottom-right
+     * to toggle. Useful for diagnosing the touchscreen plugin without
+     * needing ADB/logcat. */
+    Item {
+        id: debugOverlay
+        anchors.fill: parent
+        z: 100
+
+        property bool open: false
+
+        Rectangle {
+            id: logBadge
+            width: 56; height: 28
+            color: "#cc222222"
+            border.color: "#88ffffff"
+            border.width: 1
+            radius: 4
+            anchors.right: parent.right
+            anchors.bottom: parent.bottom
+            anchors.margins: 8
+
+            Text {
+                anchors.centerIn: parent
+                text: debugOverlay.open ? "HIDE" : "LOG"
+                color: "white"
+                font.pixelSize: 12
+                font.bold: true
+            }
+
+            MouseArea {
+                anchors.fill: parent
+                onClicked: debugOverlay.open = !debugOverlay.open
+            }
+        }
+
+        Rectangle {
+            id: logPanel
+            visible: debugOverlay.open
+            color: "#ee000000"
+            border.color: "#88ffffff"
+            border.width: 1
+            anchors.left: parent.left
+            anchors.right: parent.right
+            anchors.bottom: logBadge.top
+            anchors.margins: 8
+            height: parent.height * 0.45
+
+            Flickable {
+                id: logFlick
+                anchors.fill: parent
+                anchors.margins: 6
+                anchors.bottomMargin: 36
+                contentWidth: width
+                contentHeight: logText.implicitHeight
+                clip: true
+
+                TextEdit {
+                    id: logText
+                    width: logFlick.width
+                    text: Emu.debugLog
+                    color: "#dddddd"
+                    font.family: "Monospace"
+                    font.pixelSize: 10
+                    wrapMode: TextEdit.Wrap
+                    textFormat: TextEdit.PlainText
+                    readOnly: true
+                    selectByMouse: true
+                    persistentSelection: true
+                    onTextChanged: {
+                        // Auto-scroll to bottom on new lines
+                        logFlick.contentY = Math.max(0, logText.implicitHeight - logFlick.height);
+                    }
+                }
+            }
+
+            Row {
+                anchors.right: parent.right
+                anchors.bottom: parent.bottom
+                anchors.margins: 6
+                spacing: 6
+
+                Rectangle {
+                    width: 60; height: 24
+                    color: "#444"; radius: 3
+                    Text { anchors.centerIn: parent; text: "Clear"; color: "white"; font.pixelSize: 11 }
+                    MouseArea { anchors.fill: parent; onClicked: Emu.clearDebugLog() }
+                }
+                Rectangle {
+                    width: 60; height: 24
+                    color: "#444"; radius: 3
+                    Text { anchors.centerIn: parent; text: "Copy"; color: "white"; font.pixelSize: 11 }
+                    MouseArea {
+                        anchors.fill: parent
+                        onClicked: {
+                            logText.selectAll();
+                            logText.copy();
+                            logText.deselect();
+                        }
+                    }
+                }
+            }
+        }
+    }
+
     states: [ State {
         name: "tabletMode"
         when: mobileui.width > mobileui.height

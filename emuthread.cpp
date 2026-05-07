@@ -18,6 +18,7 @@
 #include "core/debug.h"
 #include "core/emu.h"
 #include "core/usblink_queue.h"
+#include "qmlbridge.h"
 
 EmuThread emu_thread;
 
@@ -43,6 +44,13 @@ void gui_debug_vprintf(const char *fmt, va_list ap)
     /* On mobile (Android/iOS) the debugStr signal is not wired to any UI;
      * route through qDebug so logcat / Console.app can capture it. */
     qDebug().noquote() << s.trimmed();
+    /* Also feed the in-app debug overlay buffer so the user can read logs
+     * directly on the device without USB/ADB. Use a queued invoke since
+     * this can be called from the emu thread. */
+    if (the_qml_bridge)
+        QMetaObject::invokeMethod(the_qml_bridge, "appendDebugLog",
+                                  Qt::QueuedConnection,
+                                  Q_ARG(QString, s));
 #endif
     emu_thread.debugStr(s);
 }

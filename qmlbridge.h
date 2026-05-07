@@ -37,6 +37,10 @@ public:
     Q_PROPERTY(int mobileWidth READ getMobileWidth WRITE setMobileWidth NOTIFY neverEmitted)
     Q_PROPERTY(int mobileHeight READ getMobileHeight WRITE setMobileHeight NOTIFY neverEmitted)
 
+    /* In-app debug log buffer (mobile UI overlay). Updated whenever
+     * emuprintf/gui_debug_printf is called. */
+    Q_PROPERTY(QString debugLog READ getDebugLog NOTIFY debugLogChanged)
+
     unsigned int getGDBPort();
     void setGDBPort(unsigned int port);
     void setGDBEnabled(bool e);
@@ -89,6 +93,12 @@ public:
     // when the plugin isn't loaded.
     Q_INVOKABLE bool absoluteTap(qreal nx, qreal ny, int action);
     Q_INVOKABLE bool touchscreenPluginReady();
+
+    /* In-app debug log API */
+    Q_INVOKABLE QString getDebugLog();
+    Q_INVOKABLE void clearDebugLog();
+    /* Called from gui_debug_vprintf in emuthread.cpp (queued from emu thread). */
+    Q_INVOKABLE void appendDebugLog(const QString &line);
 
     Q_INVOKABLE bool isMobile();
 
@@ -169,6 +179,7 @@ signals:
 
     void touchpadStateChanged(qreal x, qreal y, bool contact, bool down);
     void buttonStateChanged(int id, bool state);
+    void debugLogChanged();
 
     /* Never called. Used as NOTIFY value for writable properties
      * that aren't used outside of QML. */
@@ -184,6 +195,11 @@ private:
     KitModel kit_model;
     QSettings settings;
     bool is_active = false;
+
+    /* Ring buffer for in-app debug overlay (last ~200 lines). */
+    QString debug_log;
+    int     debug_log_lines = 0;
+    static constexpr int DEBUG_LOG_MAX_LINES = 200;
 };
 
 extern QMLBridge *the_qml_bridge;

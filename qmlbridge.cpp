@@ -283,6 +283,39 @@ bool QMLBridge::touchscreenPluginReady()
     return ::touchscreen_plugin_ready();
 }
 
+QString QMLBridge::getDebugLog()
+{
+    return debug_log;
+}
+
+void QMLBridge::clearDebugLog()
+{
+    debug_log.clear();
+    debug_log_lines = 0;
+    emit debugLogChanged();
+}
+
+void QMLBridge::appendDebugLog(const QString &line)
+{
+    debug_log.append(line);
+    if (!line.endsWith(QLatin1Char('\n')))
+        debug_log.append(QLatin1Char('\n'));
+    debug_log_lines++;
+    /* Trim head if too many lines, drop ~50 at a time to avoid quadratic cost. */
+    if (debug_log_lines > DEBUG_LOG_MAX_LINES) {
+        int drop = 50;
+        int idx = 0;
+        for (int i = 0; i < drop; ++i) {
+            int n = debug_log.indexOf(QLatin1Char('\n'), idx);
+            if (n < 0) break;
+            idx = n + 1;
+        }
+        debug_log.remove(0, idx);
+        debug_log_lines -= drop;
+    }
+    emit debugLogChanged();
+}
+
 bool QMLBridge::isMobile()
 {
     // TODO: Mobile UI on desktop? Q_OS_ANDROID doesn't work somehow.
