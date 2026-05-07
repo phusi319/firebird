@@ -5,11 +5,17 @@
 
 #include <stdio.h>
 #include <string.h>
+#include <stddef.h>
 
 extern "C" {
 
 static uint32_t s_seq = 0;
 static bool     s_diagnosed = false;
+/* Physical address where the plugin's mailbox actually lives. The plugin
+ * places its mailbox in its own data segment so the OS's MMU determines
+ * the physical page; we discover it by scanning SDRAM for PLUGIN_MAGIC.
+ * 0 == not discovered yet. */
+static uint32_t s_mailbox_phys = 0;
 
 /* Scan the entire emulated SDRAM looking for the plugin magic 'TPRD'.
  * Useful when we suspect the plugin wrote it at a different physical
@@ -57,11 +63,25 @@ static void diagnose_once(void)
         emuprintf("[touchscreen] plugin TPRD magic NOT FOUND in SDRAM\n");
 }
 
+/* Locate the plugin's mailbox. Caches the discovered phys addr in
+ * s_mailbox_phys. The mailbox structure starts 0x10 bytes BEFORE the
+ * plugin_magic field (see struct layout in touchscreen.h). */
 static volatile struct touchscreen_mailbox *get_mailbox(void)
 {
-    /* phys_mem_ptr returns NULL if the address isn't mapped (e.g. before
-     * SDRAM is configured by boot1/boot2). Caller must check. */
-    void *p = phys_mem_ptr(TOUCHSCREEN_MAILBOX_PHYS_ADDR,
+    if (s_mailbox_phys == 0) {
+        int32_t magic_phys = scan_for_plugin_magic();
+        if (magic_phys < 0)
+            return NULL;
+        /* plugin_magic field sits at offset 0x10 within the mailbox. */
+        const uint32_t MAGIC_OFFSET =
+            (uint32_t)offsetof(struct touchscreen_mailbox, plugin_magic);
+        if ((uint32_t)magic_phys < MAGIC_OFFSET)
+            return NULL;
+        s_mailbox_phys = (uint32_t)magic_phys - MAGIC_OFFSET;
+        emuprintf("[touchscreen] mailbox located @phys 0x%08x\n",
+                  s_mailbox_phys);
+    }
+    void *p = phys_mem_ptr(s_mailbox_phys,
                            sizeof(struct touchscreen_mailbox));
     return (volatile struct touchscreen_mailbox *)p;
 }
@@ -94,9 +114,19 @@ bool touchscreen_plugin_ready(void)
 {
     diagnose_once();
     volatile struct touchscreen_mailbox *mb = get_mailbox();
-    if (!mb)
+    if (!mb) {
+        /* Plugin not loaded (yet) — drop any stale cached address so a
+         * future load at a different phys page is picked up cleanly. */
+        s_mailbox_phys = 0;
         return false;
-    return mb->plugin_magic == TOUCHSCREEN_PLUGIN_MAGIC;
+    }
+    if (mb->plugin_magic != TOUCHSCREEN_PLUGIN_MAGIC) {
+        /* Plugin exited (it clears plugin_magic on ESC). Invalidate
+         * the cache so we'll re-scan if the user re-launches it. */
+        s_mailbox_phys = 0;
+        return false;
+    }
+    return true;
 }
 
 } /* extern "C" */

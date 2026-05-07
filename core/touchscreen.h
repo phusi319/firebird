@@ -23,11 +23,11 @@
  *   +0x18 u32  send_click_event_addr  plugin writes resolved syscall addr (debug)
  *   +0x1C u32  reserved
  *
- * Address: physical SDRAM 0x13FFFFE0 (top 32 bytes of the standard 64 MB
- * SDRAM region 0x10000000-0x14000000). The OS does not allocate the very
- * top page in any version we've seen. firebird accesses via phys_mem_ptr;
- * the plugin, running in the OS's supervisor context, accesses the same
- * physical addr via its identity-mapped virtual alias.
+ * Address: the plugin places the mailbox in its own data segment; firebird
+ * locates the actual physical page by scanning SDRAM for PLUGIN_MAGIC on
+ * first use and caches the result. Earlier versions tried a fixed phys
+ * address (0x13FFFFE0) but the Ndless plugin process MMU re-mapped that
+ * virtual address to a different physical page, breaking the protocol.
  */
 #ifndef TOUCHSCREEN_H
 #define TOUCHSCREEN_H

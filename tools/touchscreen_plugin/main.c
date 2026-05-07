@@ -10,7 +10,6 @@
 
 #include "os_addrs.h"
 
-#define MAILBOX_PHYS_ADDR 0x13FFFFE0u
 #define HOST_MAGIC        0x4C435054u  /* 'TPCL' */
 #define PLUGIN_MAGIC      0x44525054u  /* 'TPRD' */
 
@@ -34,11 +33,20 @@ struct mailbox {
 
 typedef void (*send_click_event_t)(int x, int y);
 
+/* The mailbox lives in the plugin's own data segment. We DON'T pin it to
+ * a fixed virtual/physical address: the Ndless plugin process has its own
+ * MMU mapping, and a hard-coded virtual address (we tried 0x13FFFFE0) was
+ * being silently re-mapped by the MMU to whatever physical page the OS
+ * had handed the plugin anyway -> host couldn't find it.
+ *
+ * Strategy: let the plugin's loader place the struct wherever it wants,
+ * the host then scans SDRAM for PLUGIN_MAGIC to discover the actual
+ * physical address. Once found the host caches it. */
+static struct mailbox g_mailbox;
+
 static struct mailbox *get_mailbox(void)
 {
-    /* Direct cast: relies on the Ndless plugin process having SDRAM
-     * identity-mapped at this address. Verified on CX II OS 6.2.0.333. */
-    return (struct mailbox *)MAILBOX_PHYS_ADDR;
+    return &g_mailbox;
 }
 
 static void announce(struct mailbox *mb)
