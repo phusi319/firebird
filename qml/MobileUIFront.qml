@@ -219,30 +219,50 @@ GridLayout {
 
     /* In-app debug log overlay. Tap the small 'LOG' badge bottom-right
      * to toggle. Useful for diagnosing the touchscreen plugin without
-     * needing ADB/logcat. */
+     * needing ADB/logcat.
+     *
+     * The overlay is reparented to mobileui.parent at component load so it
+     * floats ABOVE the entire window and never participates in the
+     * GridLayout (otherwise it stole a cell and pushed the keypad away,
+     * leaving a white gap behind it). */
     Item {
         id: debugOverlay
-        anchors.fill: parent
         z: 100
+
+        /* Don't reserve any cell in the parent GridLayout. */
+        Layout.preferredWidth: 0
+        Layout.preferredHeight: 0
+        Layout.maximumWidth: 0
+        Layout.maximumHeight: 0
+
+        /* Pop out of the GridLayout once we know the window root. */
+        Component.onCompleted: {
+            if (mobileui.parent) {
+                debugOverlay.parent = mobileui.parent;
+                debugOverlay.anchors.fill = mobileui.parent;
+            } else {
+                debugOverlay.anchors.fill = mobileui;
+            }
+        }
 
         property bool open: false
 
         Rectangle {
             id: logBadge
-            width: 56; height: 28
+            width: 88; height: 44
             color: "#cc222222"
-            border.color: "#88ffffff"
+            border.color: "#aaffffff"
             border.width: 1
-            radius: 4
+            radius: 6
             anchors.right: parent.right
             anchors.bottom: parent.bottom
-            anchors.margins: 8
+            anchors.margins: 16
 
             Text {
                 anchors.centerIn: parent
                 text: debugOverlay.open ? "HIDE" : "LOG"
                 color: "white"
-                font.pixelSize: 12
+                font.pixelSize: 16
                 font.bold: true
             }
 
@@ -255,20 +275,21 @@ GridLayout {
         Rectangle {
             id: logPanel
             visible: debugOverlay.open
+            enabled: debugOverlay.open
             color: "#ee000000"
-            border.color: "#88ffffff"
+            border.color: "#aaffffff"
             border.width: 1
             anchors.left: parent.left
             anchors.right: parent.right
             anchors.bottom: logBadge.top
-            anchors.margins: 8
+            anchors.margins: 12
             height: parent.height * 0.45
 
             Flickable {
                 id: logFlick
                 anchors.fill: parent
-                anchors.margins: 6
-                anchors.bottomMargin: 36
+                anchors.margins: 8
+                anchors.bottomMargin: 52
                 contentWidth: width
                 contentHeight: logText.implicitHeight
                 clip: true
@@ -279,7 +300,7 @@ GridLayout {
                     text: Emu.debugLog
                     color: "#dddddd"
                     font.family: "Monospace"
-                    font.pixelSize: 10
+                    font.pixelSize: 11
                     wrapMode: TextEdit.Wrap
                     textFormat: TextEdit.PlainText
                     readOnly: true
@@ -295,19 +316,19 @@ GridLayout {
             Row {
                 anchors.right: parent.right
                 anchors.bottom: parent.bottom
-                anchors.margins: 6
-                spacing: 6
+                anchors.margins: 8
+                spacing: 8
 
                 Rectangle {
-                    width: 60; height: 24
-                    color: "#444"; radius: 3
-                    Text { anchors.centerIn: parent; text: "Clear"; color: "white"; font.pixelSize: 11 }
+                    width: 84; height: 36
+                    color: "#444"; radius: 5
+                    Text { anchors.centerIn: parent; text: "Clear"; color: "white"; font.pixelSize: 14 }
                     MouseArea { anchors.fill: parent; onClicked: Emu.clearDebugLog() }
                 }
                 Rectangle {
-                    width: 60; height: 24
-                    color: "#444"; radius: 3
-                    Text { anchors.centerIn: parent; text: "Copy"; color: "white"; font.pixelSize: 11 }
+                    width: 84; height: 36
+                    color: "#444"; radius: 5
+                    Text { anchors.centerIn: parent; text: "Copy"; color: "white"; font.pixelSize: 14 }
                     MouseArea {
                         anchors.fill: parent
                         onClicked: {

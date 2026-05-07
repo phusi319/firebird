@@ -41,6 +41,11 @@ extern "C" {
 #define TOUCHSCREEN_MAILBOX_PHYS_ADDR 0x13FFFFE0u
 #define TOUCHSCREEN_HOST_MAGIC        0x4C435054u  /* 'TPCL' */
 #define TOUCHSCREEN_PLUGIN_MAGIC      0x44525054u  /* 'TPRD' */
+#define TOUCHSCREEN_PLUGIN_SENTINEL   0x5253504Eu  /* 'NSPR' -- second magic
+                                                     written at os_id, used
+                                                     by the host scanner to
+                                                     reject coincidental
+                                                     PLUGIN_MAGIC matches  */
 
 #define TOUCHSCREEN_ACTION_PRESS      1
 #define TOUCHSCREEN_ACTION_RELEASE    2

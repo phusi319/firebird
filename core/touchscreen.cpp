@@ -17,22 +17,25 @@ static bool     s_diagnosed = false;
  * 0 == not discovered yet. */
 static uint32_t s_mailbox_phys = 0;
 
-/* Scan the entire emulated SDRAM looking for the plugin magic 'TPRD'.
- * Useful when we suspect the plugin wrote it at a different physical
- * address than expected (e.g. SDRAM size mismatch, virt!=phys mapping
- * inside plugin process). Returns -1 if not found. */
+/* Scan the entire emulated SDRAM looking for the plugin magic 'TPRD'
+ * IMMEDIATELY followed by sentinel 'NSPR' (the os_id field). Requiring
+ * both rejects coincidental PLUGIN_MAGIC matches from literal pool words
+ * inside the plugin's compiled .text or stale bytes from previous runs.
+ * Returns the physical address of the plugin_magic field, or -1. */
 static int32_t scan_for_plugin_magic(void)
 {
     /* mem_areas[1] is SDRAM in firebird's memory layout. */
     const struct mem_area_desc *sd = &mem_areas[1];
     if (!sd->ptr || sd->size == 0)
         return -1;
-    const uint32_t magic = TOUCHSCREEN_PLUGIN_MAGIC;
-    /* Aligned 4-byte scan. */
-    for (uint32_t off = 0; off + 4 <= sd->size; off += 4) {
-        uint32_t v;
-        memcpy(&v, sd->ptr + off, 4);
-        if (v == magic)
+    const uint32_t magic    = TOUCHSCREEN_PLUGIN_MAGIC;
+    const uint32_t sentinel = TOUCHSCREEN_PLUGIN_SENTINEL;
+    /* Aligned 4-byte scan. We need 8 bytes (magic + sentinel). */
+    for (uint32_t off = 0; off + 8 <= sd->size; off += 4) {
+        uint32_t v0, v1;
+        memcpy(&v0, sd->ptr + off,     4);
+        memcpy(&v1, sd->ptr + off + 4, 4);
+        if (v0 == magic && v1 == sentinel)
             return (int32_t)(sd->base + off);
     }
     return -1;
@@ -40,27 +43,27 @@ static int32_t scan_for_plugin_magic(void)
 
 static void diagnose_once(void)
 {
-    /* Wait until SDRAM is actually allocated; otherwise we'd "consume"
-     * the one-shot diagnostic with a useless "size=0" line.            */
+    /* Wait until SDRAM is actually allocated AND a valid plugin mailbox
+     * has been located. Otherwise the diagnostic line is useless and
+     * just confuses the user (we used to fire it on emu start, before
+     * the user even loaded the plugin). */
+    if (s_diagnosed) return;
     const struct mem_area_desc *sd = &mem_areas[1];
     if (!sd->ptr || sd->size == 0)
         return;
-    if (s_diagnosed) return;
+    int32_t found = scan_for_plugin_magic();
+    if (found < 0)
+        return;  /* don't burn the one-shot until we have something useful */
     s_diagnosed = true;
 
     void *p = phys_mem_ptr(TOUCHSCREEN_MAILBOX_PHYS_ADDR,
                            sizeof(struct touchscreen_mailbox));
-    int32_t found = scan_for_plugin_magic();
-
     emuprintf("[touchscreen] SDRAM base=0x%08x size=%u MiB ptr=%p\n",
               sd->base, sd->size / (1024*1024), (void*)sd->ptr);
     emuprintf("[touchscreen] mailbox expected @0x%08x phys_mem_ptr=%p\n",
               TOUCHSCREEN_MAILBOX_PHYS_ADDR, p);
-    if (found >= 0)
-        emuprintf("[touchscreen] plugin TPRD magic FOUND @phys 0x%08x\n",
-                  (uint32_t)found);
-    else
-        emuprintf("[touchscreen] plugin TPRD magic NOT FOUND in SDRAM\n");
+    emuprintf("[touchscreen] plugin TPRD+NSPR magic FOUND @phys 0x%08x\n",
+              (uint32_t)found);
 }
 
 /* Locate the plugin's mailbox. Caches the discovered phys addr in
@@ -77,9 +80,14 @@ static volatile struct touchscreen_mailbox *get_mailbox(void)
             (uint32_t)offsetof(struct touchscreen_mailbox, plugin_magic);
         if ((uint32_t)magic_phys < MAGIC_OFFSET)
             return NULL;
-        s_mailbox_phys = (uint32_t)magic_phys - MAGIC_OFFSET;
-        emuprintf("[touchscreen] mailbox located @phys 0x%08x\n",
-                  s_mailbox_phys);
+        uint32_t base = (uint32_t)magic_phys - MAGIC_OFFSET;
+        /* Suppress duplicate logs when an unchanged plugin is re-scanned. */
+        static uint32_t last_logged_base = 0;
+        if (base != last_logged_base) {
+            emuprintf("[touchscreen] mailbox located @phys 0x%08x\n", base);
+            last_logged_base = base;
+        }
+        s_mailbox_phys = base;
     }
     void *p = phys_mem_ptr(s_mailbox_phys,
                            sizeof(struct touchscreen_mailbox));
@@ -120,10 +128,12 @@ bool touchscreen_plugin_ready(void)
         s_mailbox_phys = 0;
         return false;
     }
-    if (mb->plugin_magic != TOUCHSCREEN_PLUGIN_MAGIC) {
-        /* Plugin exited (it clears plugin_magic on ESC). Invalidate
+    if (mb->plugin_magic != TOUCHSCREEN_PLUGIN_MAGIC ||
+        mb->os_id        != TOUCHSCREEN_PLUGIN_SENTINEL) {
+        /* Plugin exited (it clears both magics on ESC). Invalidate
          * the cache so we'll re-scan if the user re-launches it. */
         s_mailbox_phys = 0;
+        s_diagnosed    = false;  /* let diagnostic re-fire on next load */
         return false;
     }
     return true;

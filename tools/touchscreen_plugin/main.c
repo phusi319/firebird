@@ -12,6 +12,9 @@
 
 #define HOST_MAGIC        0x4C435054u  /* 'TPCL' */
 #define PLUGIN_MAGIC      0x44525054u  /* 'TPRD' */
+#define PLUGIN_SENTINEL   0x5253504Eu  /* 'NSPR' (LE) -- second magic to
+                                          disambiguate scan hits from
+                                          coincidental literal pool words */
 
 #define ACTION_PRESS   1
 #define ACTION_RELEASE 2
@@ -51,11 +54,11 @@ static struct mailbox *get_mailbox(void)
 
 static void announce(struct mailbox *mb)
 {
-    mb->plugin_magic         = PLUGIN_MAGIC;
-    mb->os_id                = 0; /* nl_osid is not declared in stock
-                                     headers; leave 0 for v1. firebird
-                                     just needs plugin_magic to flip
-                                     mode anyway. */
+    /* Two adjacent magics so the host can tell our mailbox apart from
+     * coincidental occurrences of PLUGIN_MAGIC inside the plugin's own
+     * code (literal pool entries) or stale bytes from a previous run. */
+    mb->plugin_magic          = PLUGIN_MAGIC;
+    mb->os_id                 = PLUGIN_SENTINEL;
     mb->send_click_event_addr = SEND_CLICK_EVENT_ADDR;
 }
 
@@ -108,8 +111,10 @@ int main(void)
         /* Quit if the user presses ESC for ~half a second so the plugin
          * isn't impossible to unload. */
         if (isKeyPressed(KEY_NSPIRE_ESC)) {
-            /* Clear plugin_magic so firebird falls back to relative mode. */
+            /* Clear BOTH magics so firebird falls back to relative mode
+             * and won't keep finding our stale mailbox on the next scan. */
             mb->plugin_magic = 0;
+            mb->os_id        = 0;
             break;
         }
 
