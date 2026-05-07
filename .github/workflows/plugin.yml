@@ -14,45 +14,20 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: Install ARM toolchain + deps
+      - name: Build plugin in Ndless SDK Docker image
+        # ndless/ndless-sdk is the official image published by the Ndless
+        # team. It contains the matching arm-none-eabi toolchain, a fully
+        # built SDK at /ndless-sdk, and all wrapper scripts on PATH.
+        # Building the SDK from source on a modern Ubuntu runner fails
+        # repeatedly because newlib/binutils have moved on (PATH_MAX,
+        # REVERSE in ldscript, libc/libsyscalls symbol clashes); this
+        # image freezes the exact toolchain the SDK was authored against.
         run: |
-          sudo apt-get update
-          sudo apt-get install -y --no-install-recommends \
-            gcc-arm-none-eabi binutils-arm-none-eabi \
-            libnewlib-arm-none-eabi libstdc++-arm-none-eabi-newlib \
-            build-essential cmake git zlib1g-dev libboost-program-options-dev
-
-      - name: Clone Ndless SDK (with submodules)
-        run: |
-          git clone --recursive --depth 1 https://github.com/ndless-nspire/Ndless.git $HOME/ndless
-
-      - name: Build Ndless SDK
-        run: |
-          # nspire-gcc / nspire-as / nspire-ld / make-prg are committed scripts
-          # in ndless-sdk/bin and need to be on PATH BEFORE invoking the SDK
-          # build (libsyscalls' crt0.S calls nspire-as during the build).
-          export PATH=$HOME/ndless/ndless-sdk/bin:$PATH
-          cd $HOME/ndless/ndless-sdk
-          # Workaround: newer arm-none-eabi-newlib doesn't define PATH_MAX.
-          # libsyscalls/stdlib.cpp uses it for realpath(); inject a default.
-          sed -i '1i #ifndef PATH_MAX\n#define PATH_MAX 4096\n#endif' libsyscalls/stdlib.cpp
-          # Build only what we need: libsyscalls (crt0 + syscall stubs),
-          # thirdparty (nspire-io headers/lib), libndls (nl_osid/idle/etc),
-          # and the genzehn host tool. Skip 'samples', 'system' and the
-          # 'luna'/'zehn_loader' tools — extra deps, not needed by us.
-          make -j$(nproc) build-libsyscalls build-thirdparty build-libndls
-          # system/ provides crt0/crti/crtn and _sbrk/_fini that nspire-gcc
-          # links in by default. Building it is cheap (3 small .S files).
-          make -C system
-          make -C tools/genzehn
-          echo "$HOME/ndless/ndless-sdk/bin" >> $GITHUB_PATH
-
-      - name: Build plugin
-        run: |
-          which nspire-gcc nspire-ld nspire-as genzehn make-prg
-          cd tools/touchscreen_plugin
-          make
-          ls -la fb_touchscreen.tns
+          docker run --rm \
+            -v "$PWD/tools/touchscreen_plugin:/work" \
+            -w /work \
+            ndless/ndless-sdk:latest \
+            bash -c 'export PATH=/ndless-sdk/bin:/ndless-sdk/toolchain/install/bin:$PATH && make && ls -la fb_touchscreen.tns'
 
       - name: Upload artifact
         uses: actions/upload-artifact@v4
