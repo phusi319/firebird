@@ -39,10 +39,21 @@ GridLayout {
             onTriggered: screen.update()
         }
 
-        // Touchscreen mode: TAP on the LCD to click at that position.
-        // - Tap (small movement) -> emit one touchpad down+up at tap coords
-        // - Drag/swipe-right     -> open drawer (no cursor movement)
-        // Coordinates are normalized (0..1) so behavior is DPI-independent.
+        // Touchscreen mode: ABSOLUTE tap-to-click on the LCD.
+        //
+        // The TI-Nspire CX touchpad supports absolute mode: when a finger
+        // contacts the pad at (px,py), the OS moves the on-screen cursor
+        // toward the corresponding screen coordinate over a few I2C polls,
+        // then registers a click only when the pad's click switch is pressed.
+        //
+        // To get "click exactly at tap location" (same effect as TI's PC
+        // Teacher Software), we drive that protocol in 3 phases:
+        //   1) press   -> contact=true,  down=false  (finger lands, cursor moves)
+        //   2) +120ms  -> contact=true,  down=true   (click registers at new cursor pos)
+        //   3) +60ms   -> contact=false, down=false  (lift)
+        //
+        // Drag tracks the finger (cursor follows). Swipe-right opens drawer.
+        // All coordinates normalized to 0..1 (DPI-independent).
         MouseArea {
             id: swipeArea
             anchors.fill: parent
@@ -50,46 +61,89 @@ GridLayout {
 
             property real startX: 0
             property real startY: 0
+            property real lastNX: 0
+            property real lastNY: 0
+            property bool dragging: false
+            property bool drawerOpened: false
             // DPI-independent thresholds (% of screen width)
             property real swipeThreshold: mobileui.width * 0.08
             property real tapThreshold:   mobileui.width * 0.02
 
-            // Quick release timer to make the tap a clean click (down then up)
+            // Phase-2: register the click after cursor has settled at absolute coord
             Timer {
-                id: tapReleaseTimer
-                interval: 80
+                id: clickDownTimer
+                interval: 120
                 repeat: false
-                property real px: 0
-                property real py: 0
-                onTriggered: Emu.setTouchpadState(px, py, false, false)
+                onTriggered: Emu.setTouchpadState(swipeArea.lastNX, swipeArea.lastNY, true, true)
+            }
+            // Phase-3: lift finger
+            Timer {
+                id: clickUpTimer
+                interval: 180   // = 120 + 60
+                repeat: false
+                onTriggered: Emu.setTouchpadState(swipeArea.lastNX, swipeArea.lastNY, false, false)
+            }
+
+            function sendContact(nx, ny) {
+                lastNX = Math.max(0, Math.min(1, nx));
+                lastNY = Math.max(0, Math.min(1, ny));
+                Emu.setTouchpadState(lastNX, lastNY, true, false);
             }
 
             onPressed: {
                 startX = mouse.x;
                 startY = mouse.y;
+                dragging = false;
+                drawerOpened = false;
+                clickDownTimer.stop();
+                clickUpTimer.stop();
+                // Phase 1: finger lands at absolute pad coord
+                sendContact(mouse.x / width, mouse.y / height);
             }
-            onReleased: {
+            onPositionChanged: {
                 var dx = mouse.x - startX;
                 var dy = mouse.y - startY;
                 var adx = Math.abs(dx);
                 var ady = Math.abs(dy);
 
-                // Swipe-right -> open drawer
-                if (dx > swipeThreshold && adx > ady * 1.5) {
+                // Detect swipe-right -> open drawer once
+                if (!drawerOpened && dx > swipeThreshold && adx > ady * 1.5) {
+                    drawerOpened = true;
+                    // cancel any pending click and lift finger
+                    clickDownTimer.stop();
+                    clickUpTimer.stop();
+                    Emu.setTouchpadState(lastNX, lastNY, false, false);
                     listView.openDrawer();
                     return;
                 }
+                if (drawerOpened) return;
 
-                // Tap (small movement) -> click at tap coords
-                if (adx <= tapThreshold && ady <= tapThreshold) {
-                    var nx = Math.max(0, Math.min(1, mouse.x / width));
-                    var ny = Math.max(0, Math.min(1, mouse.y / height));
-                    Emu.setTouchpadState(nx, ny, true, true);
-                    tapReleaseTimer.px = nx;
-                    tapReleaseTimer.py = ny;
-                    tapReleaseTimer.restart();
+                // If the finger moves beyond tap threshold, treat as drag:
+                // keep cursor following finger, but do NOT auto-click on release.
+                if (adx > tapThreshold || ady > tapThreshold)
+                    dragging = true;
+
+                sendContact(mouse.x / width, mouse.y / height);
+            }
+            onReleased: {
+                if (drawerOpened) return;
+
+                if (dragging) {
+                    // Drag without swipe -> just lift (cursor stays where dragged)
+                    Emu.setTouchpadState(lastNX, lastNY, false, false);
+                    return;
                 }
-                // else: drag without swipe-right -> ignore (no cursor movement)
+
+                // Tap: schedule click+release at the tap coords
+                lastNX = Math.max(0, Math.min(1, mouse.x / width));
+                lastNY = Math.max(0, Math.min(1, mouse.y / height));
+                clickDownTimer.restart();
+                clickUpTimer.restart();
+            }
+            onCanceled: {
+                clickDownTimer.stop();
+                clickUpTimer.stop();
+                Emu.setTouchpadState(lastNX, lastNY, false, false);
             }
         }
     }
