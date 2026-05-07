@@ -4,7 +4,7 @@ name: Build for Android
 # events but only for the master branch
 on:
   push:
-    branches: [ master, qwerty-keypad, qwerty-keypad-fix ]
+    branches: [ master, qwerty-keypad, qwerty-keypad-fix, mobile-absolute-touch ]
   pull_request:
     branches: [ master ]
   workflow_dispatch:
