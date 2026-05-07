@@ -22,20 +22,28 @@ jobs:
             libnewlib-arm-none-eabi libstdc++-arm-none-eabi-newlib \
             build-essential cmake git zlib1g-dev libboost-program-options-dev
 
-      - name: Clone & build Ndless SDK
+      - name: Clone Ndless SDK (with submodules)
         run: |
-          git clone --depth 1 https://github.com/ndless-nspire/Ndless.git $HOME/ndless
+          git clone --recursive --depth 1 https://github.com/ndless-nspire/Ndless.git $HOME/ndless
+
+      - name: Build Ndless SDK
+        run: |
+          # nspire-gcc / nspire-as / nspire-ld / make-prg are committed scripts
+          # in ndless-sdk/bin and need to be on PATH BEFORE invoking the SDK
+          # build (libsyscalls' crt0.S calls nspire-as during the build).
+          export PATH=$HOME/ndless/ndless-sdk/bin:$PATH
           cd $HOME/ndless/ndless-sdk
-          # genzehn + make-prg + zehn-related host tools, plus the
-          # nspire-gcc/nspire-ld wrapper scripts.
+          # Build only what we need: libsyscalls (crt0 + syscall stubs),
+          # thirdparty (nspire-io headers/lib), libndls (nl_osid/idle/etc),
+          # and the genzehn host tool. Skip 'samples', 'system' and the
+          # 'luna'/'zehn_loader' tools — extra deps, not needed by us.
+          make -j$(nproc) build-libsyscalls build-thirdparty build-libndls
           make -C tools/genzehn
-          make -C tools/Ndless/src/loader/luna || true
-          make -j$(nproc) || (echo "Ndless SDK build failed; see log above" && exit 1)
           echo "$HOME/ndless/ndless-sdk/bin" >> $GITHUB_PATH
-          echo "$HOME/ndless/ndless-sdk/toolchain/install/bin" >> $GITHUB_PATH
 
       - name: Build plugin
         run: |
+          which nspire-gcc nspire-ld nspire-as genzehn make-prg
           cd tools/touchscreen_plugin
           make
           ls -la fb_touchscreen.tns

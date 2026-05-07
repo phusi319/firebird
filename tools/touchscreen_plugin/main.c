@@ -5,7 +5,6 @@
  * Layout of the mailbox MUST match firebird/core/touchscreen.h.
  */
 #include <os.h>
-#include <syscall.h>
 #include <libndls.h>
 #include <stdint.h>
 

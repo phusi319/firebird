@@ -4,14 +4,9 @@
 GCC      = nspire-gcc
 LD       = nspire-ld
 GENZEHN  = genzehn
-MAKEPRG  = make-prg
-
 GCCFLAGS = -Wall -W -marm -Os -ffunction-sections -fdata-sections
 LDFLAGS  = -Wl,--gc-sections
-ZEHNFLAGS = --name "fb_touchscreen" \
-            --author "firebird" \
-            --version 1 \
-            --notice "firebird absolute-touch bridge"
+ZEHNFLAGS = --name "fb_touchscreen"
 
 OBJS = main.o
 
@@ -25,7 +20,7 @@ fb_touchscreen.elf: $(OBJS)
 
 fb_touchscreen.tns: fb_touchscreen.elf
 	$(GENZEHN) --input $< --output fb_touchscreen.zehn $(ZEHNFLAGS)
-	$(MAKEPRG) fb_touchscreen.zehn $@
+	make-prg fb_touchscreen.zehn $@
 	rm -f fb_touchscreen.zehn
 
 clean:
