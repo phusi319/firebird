@@ -62,11 +62,13 @@ static struct mailbox g_mailbox;
 static uint32_t       g_last_seq;
 static volatile int   g_in_hook;  /* re-entrance guard */
 
-/* Hook target on TI-Nspire CX II CAS OS 6.2.0.333.
- *   gui_gc_getGC @ 0x10021964
- * Source: ndless-nspire/Ndless tools/MakeSyscalls/idc/OS_ncascx2-6.2.0.333.idc
+/* Hook target on TI-Nspire CX II CAS OS 6.2.0.333: the real
+ * gui_gc_getGC at 0x10128fb8 (NOT the 92-byte wrapper at 0x10021964;
+ * that one's first 8 bytes contain PC-relative ops that can't be
+ * relocated by HOOK_RESTORE_RETURN, which sends control off into freed
+ * memory and bricks the calc).
  *
- * This function is invoked on every screen redraw, giving us roughly
+ * gui_gc_getGC is invoked on every screen redraw, giving us roughly
  * 30 Hz sampling without the plugin owning the CPU.
  *
  * NOTE: hooks overwrite 8 bytes (2 instructions) at the entry point.
