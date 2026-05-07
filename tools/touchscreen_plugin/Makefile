@@ -10,7 +10,7 @@ GCCFLAGS = -Wall -W -marm -Os -ffunction-sections -fdata-sections
 # are not provided. nosys.specs gives stub semihosting fallbacks for
 # those undefineds; --allow-multiple-definition lets libsyscalls' override
 # of _malloc_r/_free_r win over newlib's.
-LDFLAGS  = -Wl,--gc-sections -Wl,--allow-multiple-definition -specs=nosys.specs
+LDFLAGS  = -Wl,--gc-sections -Wl,--allow-multiple-definition -Wl,--start-group -lnosys -Wl,--end-group
 ZEHNFLAGS = --name "fb_touchscreen"
 
 OBJS = main.o
