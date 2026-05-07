@@ -130,10 +130,14 @@ bool touchscreen_plugin_ready(void)
     }
     if (mb->plugin_magic != TOUCHSCREEN_PLUGIN_MAGIC ||
         mb->os_id        != TOUCHSCREEN_PLUGIN_SENTINEL) {
-        /* Plugin exited (it clears both magics on ESC). Invalidate
-         * the cache so we'll re-scan if the user re-launches it. */
+        /* Magic mismatch. With the v2 (resident hook) plugin this
+         * really shouldn't happen once we've located it, but keep the
+         * cache-invalidation as a defensive fallback — covers the
+         * theoretical case of the user wiping the plugin and rebooting
+         * the emulated calc, where the mailbox would no longer exist
+         * in SDRAM. */
         s_mailbox_phys = 0;
-        s_diagnosed    = false;  /* let diagnostic re-fire on next load */
+        s_diagnosed    = false;  /* let diagnostic re-fire on reload */
         return false;
     }
     return true;
