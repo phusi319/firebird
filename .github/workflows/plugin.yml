@@ -33,6 +33,9 @@ jobs:
           # build (libsyscalls' crt0.S calls nspire-as during the build).
           export PATH=$HOME/ndless/ndless-sdk/bin:$PATH
           cd $HOME/ndless/ndless-sdk
+          # Workaround: newer arm-none-eabi-newlib doesn't define PATH_MAX.
+          # libsyscalls/stdlib.cpp uses it for realpath(); inject a default.
+          sed -i '1i #ifndef PATH_MAX\n#define PATH_MAX 4096\n#endif' libsyscalls/stdlib.cpp
           # Build only what we need: libsyscalls (crt0 + syscall stubs),
           # thirdparty (nspire-io headers/lib), libndls (nl_osid/idle/etc),
           # and the genzehn host tool. Skip 'samples', 'system' and the
