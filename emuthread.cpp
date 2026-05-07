@@ -8,6 +8,7 @@
 #include <QDir>
 #include <QEventLoop>
 #include <QTimer>
+#include <QDebug>
 
 #ifdef Q_OS_WINDOWS
     #include <time.h>
@@ -37,7 +38,13 @@ void gui_debug_printf(const char *fmt, ...)
 
 void gui_debug_vprintf(const char *fmt, va_list ap)
 {
-    emu_thread.debugStr(QString::vasprintf(fmt, ap));
+    QString s = QString::vasprintf(fmt, ap);
+#ifdef MOBILE_UI
+    /* On mobile (Android/iOS) the debugStr signal is not wired to any UI;
+     * route through qDebug so logcat / Console.app can capture it. */
+    qDebug().noquote() << s.trimmed();
+#endif
+    emu_thread.debugStr(s);
 }
 
 void gui_status_printf(const char *fmt, ...)
