@@ -39,9 +39,10 @@ GridLayout {
             onTriggered: screen.update()
         }
 
-        // Touchscreen mode: tap/drag the LCD to control Nspire touchpad cursor.
+        // Touchscreen mode: TAP on the LCD to click at that position.
+        // - Tap (small movement) -> emit one touchpad down+up at tap coords
+        // - Drag/swipe-right     -> open drawer (no cursor movement)
         // Coordinates are normalized (0..1) so behavior is DPI-independent.
-        // Swipe-right to open drawer is preserved (detected at release).
         MouseArea {
             id: swipeArea
             anchors.fill: parent
@@ -51,38 +52,44 @@ GridLayout {
             property real startY: 0
             // DPI-independent thresholds (% of screen width)
             property real swipeThreshold: mobileui.width * 0.08
-            property real dragThreshold:  mobileui.width * 0.02
+            property real tapThreshold:   mobileui.width * 0.02
 
-            function emitTouch(mx, my, down) {
-                // Clamp normalized coords to [0,1]
-                var nx = Math.max(0, Math.min(1, mx / width));
-                var ny = Math.max(0, Math.min(1, my / height));
-                Emu.setTouchpadState(nx, ny, down, down);
+            // Quick release timer to make the tap a clean click (down then up)
+            Timer {
+                id: tapReleaseTimer
+                interval: 80
+                repeat: false
+                property real px: 0
+                property real py: 0
+                onTriggered: Emu.setTouchpadState(px, py, false, false)
             }
 
             onPressed: {
                 startX = mouse.x;
                 startY = mouse.y;
-                emitTouch(mouse.x, mouse.y, true);
-            }
-            onPositionChanged: {
-                if (pressed)
-                    emitTouch(mouse.x, mouse.y, true);
             }
             onReleased: {
-                // Always release touchpad
-                emitTouch(mouse.x, mouse.y, false);
-
                 var dx = mouse.x - startX;
                 var dy = mouse.y - startY;
-                // horizontal swipe right, dominant over vertical, DPI-independent threshold
-                if (dx > swipeThreshold && Math.abs(dx) > Math.abs(dy) * 1.5) {
+                var adx = Math.abs(dx);
+                var ady = Math.abs(dy);
+
+                // Swipe-right -> open drawer
+                if (dx > swipeThreshold && adx > ady * 1.5) {
                     listView.openDrawer();
+                    return;
                 }
-            }
-            onCanceled: {
-                // No mouse parameter on canceled; release at last known point
-                emitTouch(startX, startY, false);
+
+                // Tap (small movement) -> click at tap coords
+                if (adx <= tapThreshold && ady <= tapThreshold) {
+                    var nx = Math.max(0, Math.min(1, mouse.x / width));
+                    var ny = Math.max(0, Math.min(1, mouse.y / height));
+                    Emu.setTouchpadState(nx, ny, true, true);
+                    tapReleaseTimer.px = nx;
+                    tapReleaseTimer.py = ny;
+                    tapReleaseTimer.restart();
+                }
+                // else: drag without swipe-right -> ignore (no cursor movement)
             }
         }
     }
