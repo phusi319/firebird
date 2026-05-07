@@ -13,6 +13,7 @@
 #include "core/emu.h"
 #include "core/os/os.h"
 #include "core/keypad.h"
+#include "core/touchscreen.h"
 #include "core/usblink_queue.h"
 
 QMLBridge *the_qml_bridge = nullptr;
@@ -264,6 +265,22 @@ void QMLBridge::setTouchpadState(qreal x, qreal y, bool contact, bool down)
     ::touchpad_set_state(x, y, contact, down);
 
     touchpadStateChanged();
+}
+
+bool QMLBridge::absoluteTap(qreal nx, qreal ny, int action)
+{
+    // Screen is 320x240 (CX) or 320x240 (CX II) in pixels. The plugin
+    // forwards this to the OS's send_click_event which works in screen
+    // pixel coordinates.
+    int sx = qBound(0, int(nx * 320.0 + 0.5), 319);
+    int sy = qBound(0, int(ny * 240.0 + 0.5), 239);
+    uint8_t a = (action == 1 || action == 2 || action == 3) ? uint8_t(action) : uint8_t(3);
+    return ::touchscreen_send_tap(uint16_t(sx), uint16_t(sy), a);
+}
+
+bool QMLBridge::touchscreenPluginReady()
+{
+    return ::touchscreen_plugin_ready();
 }
 
 bool QMLBridge::isMobile()

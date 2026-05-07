@@ -173,6 +173,7 @@ SOURCES += $$ASMCODE_IMPL \
     core/gif.cpp \
     core/interrupt.c \
     core/keypad.cpp \
+    core/touchscreen.cpp \
     core/lcd.c \
     core/link.c \
     core/mem.c \
@@ -226,6 +227,7 @@ HEADERS += \
     core/gif.h \
     core/interrupt.h \
     core/keypad.h \
+    core/touchscreen.h \
     core/lcd.h \
     core/link.h \
     core/mem.h \

@@ -83,6 +83,13 @@ public:
     // Coordinates: (0/0) = top left (1/1) = bottom right
     Q_INVOKABLE void setTouchpadState(qreal x, qreal y, bool contact, bool down);
 
+    // Touchscreen: tap on the LCD at normalized (nx,ny) -> queue absolute click
+    // request via the in-OS Ndless plugin mailbox. Returns true if plugin is
+    // ready and the request was queued. Falls back to relative touchpad mode
+    // when the plugin isn't loaded.
+    Q_INVOKABLE bool absoluteTap(qreal nx, qreal ny, int action);
+    Q_INVOKABLE bool touchscreenPluginReady();
+
     Q_INVOKABLE bool isMobile();
 
     Q_INVOKABLE void sendFile(QUrl url, QString dir);

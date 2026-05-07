@@ -41,19 +41,20 @@ GridLayout {
 
         // Touchscreen mode: ABSOLUTE tap-to-click on the LCD.
         //
-        // The TI-Nspire CX touchpad supports absolute mode: when a finger
-        // contacts the pad at (px,py), the OS moves the on-screen cursor
-        // toward the corresponding screen coordinate over a few I2C polls,
-        // then registers a click only when the pad's click switch is pressed.
+        // PRIMARY PATH (when fb_touchscreen.tns is installed inside the
+        // emulated Nspire OS): tap -> Emu.absoluteTap(nx, ny, action) writes
+        // a request into the touchscreen mailbox in emulated SDRAM. The
+        // in-OS plugin polls the mailbox and calls send_click_event(x, y),
+        // the same OS function TI's PC Teacher Software invokes via JNI.
+        // Click registers exactly at the tap coordinate, instantly.
         //
-        // To get "click exactly at tap location" (same effect as TI's PC
-        // Teacher Software), we drive that protocol in 3 phases:
-        //   1) press   -> contact=true,  down=false  (finger lands, cursor moves)
-        //   2) +120ms  -> contact=true,  down=true   (click registers at new cursor pos)
-        //   3) +60ms   -> contact=false, down=false  (lift)
+        // FALLBACK PATH (no plugin): we drive the emulated touchpad in
+        // 3 phases (press -> +120ms click -> +60ms release). Cursor still
+        // walks toward the tap location like a relative trackpad. This is
+        // how every other Nspire emulator behaves.
         //
-        // Drag tracks the finger (cursor follows). Swipe-right opens drawer.
-        // All coordinates normalized to 0..1 (DPI-independent).
+        // Drag tracks the finger. Swipe-right opens the drawer.
+        // All coords normalized 0..1 (DPI-independent).
         MouseArea {
             id: swipeArea
             anchors.fill: parent
@@ -65,21 +66,21 @@ GridLayout {
             property real lastNY: 0
             property bool dragging: false
             property bool drawerOpened: false
+            property bool absoluteMode: false   // resolved on press
             // DPI-independent thresholds (% of screen width)
             property real swipeThreshold: mobileui.width * 0.08
             property real tapThreshold:   mobileui.width * 0.02
 
-            // Phase-2: register the click after cursor has settled at absolute coord
+            // ---- fallback (relative touchpad) timers ----
             Timer {
                 id: clickDownTimer
                 interval: 120
                 repeat: false
                 onTriggered: Emu.setTouchpadState(swipeArea.lastNX, swipeArea.lastNY, true, true)
             }
-            // Phase-3: lift finger
             Timer {
                 id: clickUpTimer
-                interval: 180   // = 120 + 60
+                interval: 180
                 repeat: false
                 onTriggered: Emu.setTouchpadState(swipeArea.lastNX, swipeArea.lastNY, false, false)
             }
@@ -97,8 +98,16 @@ GridLayout {
                 drawerOpened = false;
                 clickDownTimer.stop();
                 clickUpTimer.stop();
-                // Phase 1: finger lands at absolute pad coord
-                sendContact(mouse.x / width, mouse.y / height);
+                // Pick path based on whether plugin is loaded inside the OS.
+                absoluteMode = Emu.touchscreenPluginReady();
+                if (absoluteMode) {
+                    lastNX = Math.max(0, Math.min(1, mouse.x / width));
+                    lastNY = Math.max(0, Math.min(1, mouse.y / height));
+                    Emu.absoluteTap(lastNX, lastNY, 1); // press
+                } else {
+                    // Fallback: feed touchpad as before
+                    sendContact(mouse.x / width, mouse.y / height);
+                }
             }
             onPositionChanged: {
                 var dx = mouse.x - startX;
@@ -106,35 +115,48 @@ GridLayout {
                 var adx = Math.abs(dx);
                 var ady = Math.abs(dy);
 
-                // Detect swipe-right -> open drawer once
                 if (!drawerOpened && dx > swipeThreshold && adx > ady * 1.5) {
                     drawerOpened = true;
-                    // cancel any pending click and lift finger
                     clickDownTimer.stop();
                     clickUpTimer.stop();
-                    Emu.setTouchpadState(lastNX, lastNY, false, false);
+                    if (absoluteMode)
+                        Emu.absoluteTap(lastNX, lastNY, 2); // release
+                    else
+                        Emu.setTouchpadState(lastNX, lastNY, false, false);
                     listView.openDrawer();
                     return;
                 }
                 if (drawerOpened) return;
 
-                // If the finger moves beyond tap threshold, treat as drag:
-                // keep cursor following finger, but do NOT auto-click on release.
                 if (adx > tapThreshold || ady > tapThreshold)
                     dragging = true;
 
-                sendContact(mouse.x / width, mouse.y / height);
+                lastNX = Math.max(0, Math.min(1, mouse.x / width));
+                lastNY = Math.max(0, Math.min(1, mouse.y / height));
+                if (absoluteMode) {
+                    // Drag: treat each move as press at new coord (drag-select).
+                    Emu.absoluteTap(lastNX, lastNY, 1);
+                } else {
+                    sendContact(mouse.x / width, mouse.y / height);
+                }
             }
             onReleased: {
                 if (drawerOpened) return;
 
-                if (dragging) {
-                    // Drag without swipe -> just lift (cursor stays where dragged)
-                    Emu.setTouchpadState(lastNX, lastNY, false, false);
+                if (absoluteMode) {
+                    // Tap: send a single click action at the release coord.
+                    // (Drag finishes with a release at the last position.)
+                    lastNX = Math.max(0, Math.min(1, mouse.x / width));
+                    lastNY = Math.max(0, Math.min(1, mouse.y / height));
+                    Emu.absoluteTap(lastNX, lastNY, dragging ? 2 : 3);
                     return;
                 }
 
-                // Tap: schedule click+release at the tap coords
+                // Fallback path
+                if (dragging) {
+                    Emu.setTouchpadState(lastNX, lastNY, false, false);
+                    return;
+                }
                 lastNX = Math.max(0, Math.min(1, mouse.x / width));
                 lastNY = Math.max(0, Math.min(1, mouse.y / height));
                 clickDownTimer.restart();
@@ -143,7 +165,10 @@ GridLayout {
             onCanceled: {
                 clickDownTimer.stop();
                 clickUpTimer.stop();
-                Emu.setTouchpadState(lastNX, lastNY, false, false);
+                if (absoluteMode)
+                    Emu.absoluteTap(lastNX, lastNY, 2);
+                else
+                    Emu.setTouchpadState(lastNX, lastNY, false, false);
             }
         }
     }
