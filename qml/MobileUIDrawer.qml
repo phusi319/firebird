@@ -138,6 +138,21 @@ Rectangle {
 
                 onClicked: listView.openConfiguration();
             }
+
+            DrawerButton {
+                id: debugLogButton
+
+                toggle: true
+                toggleState: app.debugLogVisible
+
+                title: qsTr("Debug Log")
+                icon: "qrc:/icons/resources/icons/preferences-other.png"
+
+                onToggleStateChanged: {
+                    app.debugLogVisible = toggleState;
+                    toggleState = Qt.binding(function() { return app.debugLogVisible; });
+                }
+            }
         }
 
         Item {

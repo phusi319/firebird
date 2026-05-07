@@ -217,8 +217,8 @@ GridLayout {
         color: keypad.color
     }
 
-    /* In-app debug log overlay. Tap the small 'LOG' badge bottom-right
-     * to toggle. Useful for diagnosing the touchscreen plugin without
+    /* In-app debug log overlay. Shown when the user toggles "Debug Log"
+     * in the drawer. Useful for diagnosing the touchscreen plugin without
      * needing ADB/logcat.
      *
      * The overlay is reparented to mobileui.parent at component load so it
@@ -245,43 +245,18 @@ GridLayout {
             }
         }
 
-        property bool open: false
-
-        Rectangle {
-            id: logBadge
-            width: 88; height: 44
-            color: "#cc222222"
-            border.color: "#aaffffff"
-            border.width: 1
-            radius: 6
-            anchors.right: parent.right
-            anchors.bottom: parent.bottom
-            anchors.margins: 16
-
-            Text {
-                anchors.centerIn: parent
-                text: debugOverlay.open ? "HIDE" : "LOG"
-                color: "white"
-                font.pixelSize: 16
-                font.bold: true
-            }
-
-            MouseArea {
-                anchors.fill: parent
-                onClicked: debugOverlay.open = !debugOverlay.open
-            }
-        }
+        /* Visibility is driven from the drawer's "Debug Log" toggle on the
+         * top-level ApplicationWindow (id: app). */
+        visible: typeof app !== "undefined" && app.debugLogVisible
 
         Rectangle {
             id: logPanel
-            visible: debugOverlay.open
-            enabled: debugOverlay.open
             color: "#ee000000"
             border.color: "#aaffffff"
             border.width: 1
             anchors.left: parent.left
             anchors.right: parent.right
-            anchors.bottom: logBadge.top
+            anchors.bottom: parent.bottom
             anchors.margins: 12
             height: parent.height * 0.45
 
@@ -336,6 +311,15 @@ GridLayout {
                             logText.copy();
                             logText.deselect();
                         }
+                    }
+                }
+                Rectangle {
+                    width: 84; height: 36
+                    color: "#663333"; radius: 5
+                    Text { anchors.centerIn: parent; text: "Close"; color: "white"; font.pixelSize: 14 }
+                    MouseArea {
+                        anchors.fill: parent
+                        onClicked: { if (typeof app !== "undefined") app.debugLogVisible = false; }
                     }
                 }
             }

@@ -13,6 +13,10 @@ ApplicationWindow {
 
     property bool closeAfterSuspend: false
     property bool ignoreSuspendOnClose: false
+    /* Toggled from the drawer ("Debug Log" button). When true, an overlay
+     * panel showing Emu.debugLog is rendered on top of the emulator UI.
+     * Lives on app so it survives drawer/page switches. */
+    property bool debugLogVisible: false
 
     onXChanged: Emu.mobileX = x
     onYChanged: Emu.mobileY = y
