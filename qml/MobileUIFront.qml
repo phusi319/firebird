@@ -39,24 +39,50 @@ GridLayout {
             onTriggered: screen.update()
         }
 
+        // Touchscreen mode: tap/drag the LCD to control Nspire touchpad cursor.
+        // Coordinates are normalized (0..1) so behavior is DPI-independent.
+        // Swipe-right to open drawer is preserved (detected at release).
         MouseArea {
             id: swipeArea
             anchors.fill: parent
+            preventStealing: true
 
             property real startX: 0
             property real startY: 0
+            // DPI-independent thresholds (% of screen width)
+            property real swipeThreshold: mobileui.width * 0.08
+            property real dragThreshold:  mobileui.width * 0.02
+
+            function emitTouch(mx, my, down) {
+                // Clamp normalized coords to [0,1]
+                var nx = Math.max(0, Math.min(1, mx / width));
+                var ny = Math.max(0, Math.min(1, my / height));
+                Emu.setTouchpadState(nx, ny, down, down);
+            }
 
             onPressed: {
                 startX = mouse.x;
                 startY = mouse.y;
+                emitTouch(mouse.x, mouse.y, true);
+            }
+            onPositionChanged: {
+                if (pressed)
+                    emitTouch(mouse.x, mouse.y, true);
             }
             onReleased: {
+                // Always release touchpad
+                emitTouch(mouse.x, mouse.y, false);
+
                 var dx = mouse.x - startX;
                 var dy = mouse.y - startY;
-                // horizontal swipe right, dominant over vertical, threshold = 8% of screen width (DPI-independent)
-                if (dx > mobileui.width * 0.08 && Math.abs(dx) > Math.abs(dy) * 1.5) {
+                // horizontal swipe right, dominant over vertical, DPI-independent threshold
+                if (dx > swipeThreshold && Math.abs(dx) > Math.abs(dy) * 1.5) {
                     listView.openDrawer();
                 }
+            }
+            onCanceled: {
+                // No mouse parameter on canceled; release at last known point
+                emitTouch(startX, startY, false);
             }
         }
     }
