@@ -44,7 +44,10 @@ static struct mailbox *get_mailbox(void)
 static void announce(struct mailbox *mb)
 {
     mb->plugin_magic         = PLUGIN_MAGIC;
-    mb->os_id                = (uint32_t)nl_osid();
+    mb->os_id                = 0; /* nl_osid is not declared in stock
+                                     headers; leave 0 for v1. firebird
+                                     just needs plugin_magic to flip
+                                     mode anyway. */
     mb->send_click_event_addr = SEND_CLICK_EVENT_ADDR;
 }
 
