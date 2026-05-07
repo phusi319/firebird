@@ -71,6 +71,10 @@ void touchpad_cx_reset(void);
 uint32_t touchpad_cx_read(uint32_t addr);
 void touchpad_cx_write(uint32_t addr, uint32_t value);
 void touchpad_set_state(float x, float y, bool contact, bool down);
+/* Absolute touchscreen mode: feed rel_x/y deltas toward target each I2C read.
+ * x,y in [0..1] mapping to touchpad area. Multi-frame to overcome int8 limit. */
+void touchscreen_set_target(float x, float y, bool contact, bool down);
+void touchscreen_clear_target(void);
 
 #define TOUCHPAD_X_MAX 0x0918
 #define TOUCHPAD_Y_MAX 0x069B

@@ -41,10 +41,10 @@ GridLayout {
 
         // Touch handler over the emulated screen.
         // Two responsibilities, mutually exclusive within a single press:
-        //   1. Detect a horizontal swipe-right -> open drawer (suppresses touchpad).
-        //   2. Otherwise, forward the touch as absolute touchpad input
-        //      (tap/hold/drag), feeding Emu.setTouchpadState the same way
-        //      qml/Touchpad.qml does for the virtual touchpad widget.
+        //   1. Detect a horizontal swipe-right -> open drawer.
+        //   2. Otherwise, treat as ABSOLUTE touchscreen tap: cursor
+        //      teleports to the touched point and clicks (the firebird
+        //      core state machine drives rel_x/y deltas to converge).
         MouseArea {
             id: swipeArea
             anchors.fill: parent
@@ -54,34 +54,25 @@ GridLayout {
             property real startX: 0
             property real startY: 0
             property bool swiped: false
-            property bool isDown: false
+            property bool committed: false  // tap has been sent to core
 
-            function submitState() {
-                // While a swipe is in progress, release the touchpad so the
-                // OS doesn't see a stray drag/click.
-                if (swiped)
-                    Emu.setTouchpadState(0, 0, false, false);
-                else
-                    Emu.setTouchpadState(mouseX / width, mouseY / height,
-                                        pressed || isDown, isDown);
+            function submitTap() {
+                if (swiped || !committed)
+                    return;
+                Emu.setTouchscreenTap(mouseX / width, mouseY / height,
+                                      true, true);
             }
 
-            // Press-and-hold (>= 200 ms) -> button-down (drag).
+            // Defer the actual tap a few ms so a fast swipe-right can
+            // cancel before any cursor motion is generated.
             Timer {
-                id: clickOnHoldTimer
-                interval: 200
+                id: commitTimer
+                interval: 40
                 onTriggered: {
-                    swipeArea.isDown = true;
-                    swipeArea.submitState();
-                }
-            }
-            // Quick-tap completion: emit a brief down pulse on release.
-            Timer {
-                id: clickOnReleaseTimer
-                interval: 100
-                onTriggered: {
-                    swipeArea.isDown = false;
-                    swipeArea.submitState();
+                    if (swipeArea.swiped)
+                        return;
+                    swipeArea.committed = true;
+                    swipeArea.submitTap();
                 }
             }
 
@@ -89,43 +80,40 @@ GridLayout {
                 startX = mouse.x;
                 startY = mouse.y;
                 swiped = false;
-                isDown = false;
-                clickOnHoldTimer.restart();
-                submitState();
+                committed = false;
+                commitTimer.restart();
             }
 
             onMouseXChanged: {
-                if (!swiped) {
+                if (!swiped && !committed) {
                     var dx = mouseX - startX;
                     var dy = mouseY - startY;
-                    // horizontal swipe right, dominant over vertical,
-                    // threshold = 8% of screen width (DPI-independent).
                     if (dx > mobileui.width * 0.08
                         && Math.abs(dx) > Math.abs(dy) * 1.5) {
                         swiped = true;
-                        clickOnHoldTimer.stop();
+                        commitTimer.stop();
+                        return;
                     }
                 }
-                submitState();
+                submitTap();
             }
-            onMouseYChanged: submitState()
+            onMouseYChanged: submitTap()
 
             onReleased: {
+                commitTimer.stop();
                 if (swiped) {
-                    Emu.setTouchpadState(0, 0, false, false);
+                    Emu.setTouchscreenTap(0, 0, false, false);
                     listView.openDrawer();
                     return;
                 }
-                if (clickOnHoldTimer.running) {
-                    // Quick tap: never reached hold threshold.
-                    clickOnHoldTimer.stop();
-                    isDown = true;
-                    clickOnReleaseTimer.restart();
-                } else {
-                    // Long press: was already down; release now.
-                    isDown = false;
+                if (!committed) {
+                    // Very fast tap that ended before commit timer fired:
+                    // commit and release immediately.
+                    Emu.setTouchscreenTap(mouseX / width, mouseY / height,
+                                          true, true);
                 }
-                submitState();
+                Emu.setTouchscreenTap(0, 0, false, false);
+                committed = false;
             }
         }
     }

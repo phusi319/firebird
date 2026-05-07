@@ -207,6 +207,62 @@ static void touchpad_write(uint8_t addr, uint8_t value) {
     if (addr == 0xFF)
         keypad.touchpad_page = value;
 }
+
+/* === Absolute touchscreen state machine =================================
+ * OS only knows relative motion (int8 rel_x/rel_y). To "teleport" cursor we
+ * track our own virtual position and feed clamped deltas every time the OS
+ * reads the rel registers; cursor converges to target over a few frames.
+ */
+static bool ts_active = false;
+static bool ts_pending_down = false;
+static int  ts_target_x = 0, ts_target_y = 0;       /* in touchpad units */
+static int  ts_virt_x   = TOUCHPAD_X_MAX / 2;       /* our cursor estimate */
+static int  ts_virt_y   = TOUCHPAD_Y_MAX / 2;
+
+static int8_t ts_step(int *virt, int target)
+{
+    int d = target - *virt;
+    int8_t s;
+    if (d >  127)      s =  127;
+    else if (d < -128) s = -128;
+    else               s = (int8_t)d;
+    *virt += s;
+    return s;
+}
+
+void touchscreen_set_target(float x, float y, bool contact, bool down)
+{
+    std::lock_guard<std::recursive_mutex> lg(keypad_mut);
+    int tx = (int)(x * TOUCHPAD_X_MAX);
+    int ty = TOUCHPAD_Y_MAX - (int)(y * TOUCHPAD_Y_MAX);
+    if (tx < 0) tx = 0; else if (tx > TOUCHPAD_X_MAX) tx = TOUCHPAD_X_MAX;
+    if (ty < 0) ty = 0; else if (ty > TOUCHPAD_Y_MAX) ty = TOUCHPAD_Y_MAX;
+    ts_target_x = tx;
+    ts_target_y = ty;
+    ts_pending_down = down;
+    ts_active = contact || down;
+    keypad.touchpad_contact = contact || down;
+    /* Don't apply down until cursor reached target -- prevents click during
+     * the migration. We still need contact = true so OS treats motion as
+     * touchpad active. */
+    keypad.touchpad_down = false;
+    keypad.touchpad_x = ts_virt_x;
+    keypad.touchpad_y = ts_virt_y;
+    keypad.kpc.gpio_int_active |= 0x800;
+    keypad_int_check();
+}
+
+void touchscreen_clear_target(void)
+{
+    std::lock_guard<std::recursive_mutex> lg(keypad_mut);
+    ts_active = false;
+    ts_pending_down = false;
+    keypad.touchpad_down = false;
+    keypad.touchpad_contact = false;
+    keypad.kpc.gpio_int_active |= 0x800;
+    keypad_int_check();
+}
+
 static uint8_t touchpad_read(uint8_t addr) {
     if (addr == 0xFF)
         return keypad.touchpad_page;
@@ -229,12 +285,30 @@ static uint8_t touchpad_read(uint8_t addr) {
             case 0x05: return keypad.touchpad_y & 0xFF;
             case 0x06: // relative x
             {
+                if (ts_active) {
+                    int8_t s = ts_step(&ts_virt_x, ts_target_x);
+                    keypad.touchpad_x = ts_virt_x;
+                    /* Convergence is checked in the 0x07 reader so we
+                     * don't disarm the state machine before Y advances. */
+                    return (uint8_t)s;
+                }
                 uint8_t a = keypad.touchpad_rel_x;
                 keypad.touchpad_rel_x = 0;
                 return a;
             }
             case 0x07: // relative y
             {
+                if (ts_active) {
+                    int8_t s = ts_step(&ts_virt_y, ts_target_y);
+                    keypad.touchpad_y = ts_virt_y;
+                    if (ts_virt_x == ts_target_x && ts_virt_y == ts_target_y) {
+                        if (ts_pending_down) {
+                            keypad.touchpad_down = true;
+                        }
+                        ts_active = false;
+                    }
+                    return (uint8_t)s;
+                }
                 uint8_t a = keypad.touchpad_rel_y;
                 keypad.touchpad_rel_y = 0;
                 return a;

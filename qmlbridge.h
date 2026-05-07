@@ -82,6 +82,8 @@ public:
 
     // Coordinates: (0/0) = top left (1/1) = bottom right
     Q_INVOKABLE void setTouchpadState(qreal x, qreal y, bool contact, bool down);
+    // Absolute touchscreen tap: cursor teleports to (x,y) over a few frames.
+    Q_INVOKABLE void setTouchscreenTap(qreal x, qreal y, bool contact, bool down);
 
     Q_INVOKABLE bool isMobile();
 

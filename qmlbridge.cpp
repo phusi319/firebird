@@ -266,6 +266,16 @@ void QMLBridge::setTouchpadState(qreal x, qreal y, bool contact, bool down)
     touchpadStateChanged();
 }
 
+void QMLBridge::setTouchscreenTap(qreal x, qreal y, bool contact, bool down)
+{
+    if (!contact && !down)
+        ::touchscreen_clear_target();
+    else
+        ::touchscreen_set_target((float)x, (float)y, contact, down);
+
+    touchpadStateChanged();
+}
+
 bool QMLBridge::isMobile()
 {
     // TODO: Mobile UI on desktop? Q_OS_ANDROID doesn't work somehow.
