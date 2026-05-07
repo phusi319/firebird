@@ -34,10 +34,14 @@ static int32_t scan_for_plugin_magic(void)
 
 static void diagnose_once(void)
 {
+    /* Wait until SDRAM is actually allocated; otherwise we'd "consume"
+     * the one-shot diagnostic with a useless "size=0" line.            */
+    const struct mem_area_desc *sd = &mem_areas[1];
+    if (!sd->ptr || sd->size == 0)
+        return;
     if (s_diagnosed) return;
     s_diagnosed = true;
 
-    const struct mem_area_desc *sd = &mem_areas[1];
     void *p = phys_mem_ptr(TOUCHSCREEN_MAILBOX_PHYS_ADDR,
                            sizeof(struct touchscreen_mailbox));
     int32_t found = scan_for_plugin_magic();
