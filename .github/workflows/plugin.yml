@@ -41,6 +41,9 @@ jobs:
           # and the genzehn host tool. Skip 'samples', 'system' and the
           # 'luna'/'zehn_loader' tools — extra deps, not needed by us.
           make -j$(nproc) build-libsyscalls build-thirdparty build-libndls
+          # system/ provides crt0/crti/crtn and _sbrk/_fini that nspire-gcc
+          # links in by default. Building it is cheap (3 small .S files).
+          make -C system
           make -C tools/genzehn
           echo "$HOME/ndless/ndless-sdk/bin" >> $GITHUB_PATH
 

@@ -5,7 +5,12 @@ GCC      = nspire-gcc
 LD       = nspire-ld
 GENZEHN  = genzehn
 GCCFLAGS = -Wall -W -marm -Os -ffunction-sections -fdata-sections
-LDFLAGS  = -Wl,--gc-sections
+# Newer newlib (Ubuntu 24.04 ships 4.4) pulls _malloc_r from libc which
+# conflicts with libsyscalls' override and references _sbrk/_fini that
+# are not provided. nosys.specs gives stub semihosting fallbacks for
+# those undefineds; --allow-multiple-definition lets libsyscalls' override
+# of _malloc_r/_free_r win over newlib's.
+LDFLAGS  = -Wl,--gc-sections -Wl,--allow-multiple-definition -specs=nosys.specs
 ZEHNFLAGS = --name "fb_touchscreen"
 
 OBJS = main.o
