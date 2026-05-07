@@ -5,10 +5,13 @@ GCC      = nspire-gcc
 LD       = nspire-ld
 GENZEHN  = genzehn
 GCCFLAGS = -Wall -W -marm -Os -ffunction-sections -fdata-sections
-LDFLAGS  = -Wl,--gc-sections
+# Newer newlib (Ubuntu 24.04 ships 4.4) pulls _malloc_r from libc which
+# conflicts with libsyscalls' override; --allow-multiple-definition lets
+# libsyscalls win. _sbrk/_fini are provided locally by stubs.c.
+LDFLAGS  = -Wl,--gc-sections -Wl,--allow-multiple-definition
 ZEHNFLAGS = --name "fb_touchscreen"
 
-OBJS = main.o
+OBJS = main.o stubs.o
 
 all: fb_touchscreen.tns
 
